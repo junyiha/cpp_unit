@@ -10,9 +10,28 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_TYPE "Debug")
 
+
+# 
+find_package(GLOG REQUIRED PATHS ${CMAKE_SOURCE_DIR}/third_party/glog/lib/cmake/glog/ NO_DEFAULT_PATH)
+if(GLOG_FOUND)
+    message(STATUS "find GLOG library, include directory: " ${GLOG_INCLUDE_DIR})
+else(GLOG_FOUND)
+    message(FATAL_ERROR "Can not find GLOG!!!")
+endif(GLOG_FOUND)
+
+#
+find_package(GFLAGS)
+if(GFLAGS_FOUND)
+    message(STATUS "find GFLAGS library, include directory: " ${GFLAGS_INCLUDE_DIR})
+else(GFLAGS_FOUND)
+    message(FATAL_ERROR "Can not find GFLAGS!!!")
+endif(GFLAGS_FOUND)
+
 #
 aux_source_directory(${CMAKE_SOURCE_DIR}/src/ SRC_FILES)
 
 add_executable(cpp_unit ${SRC_FILES})
 
 target_include_directories(cpp_unit PUBLIC ${CMAKE_SOURCE_DIR}/include/)
+
+target_link_libraries(cpp_unit glog::glog)
