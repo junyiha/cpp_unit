@@ -20,9 +20,10 @@ else(GLOG_FOUND)
 endif(GLOG_FOUND)
 
 #
-find_package(GFLAGS)
+find_package(GFLAGS REQUIRED PATHS ${CMAKE_SOURCE_DIR}/third_party/gflags/lib/cmake/gflags/ NO_DEFAULT_PATH)
 if(GFLAGS_FOUND)
     message(STATUS "find GFLAGS library, include directory: " ${GFLAGS_INCLUDE_DIR})
+    message(STATUS "GFLAGS libraries: " ${GFLAGS_LIBRARIES})
 else(GFLAGS_FOUND)
     message(FATAL_ERROR "Can not find GFLAGS!!!")
 endif(GFLAGS_FOUND)
@@ -34,4 +35,4 @@ add_executable(cpp_unit ${SRC_FILES})
 
 target_include_directories(cpp_unit PUBLIC ${CMAKE_SOURCE_DIR}/include/)
 
-target_link_libraries(cpp_unit glog::glog)
+target_link_libraries(cpp_unit glog::glog gflags)

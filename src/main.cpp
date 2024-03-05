@@ -40,5 +40,7 @@ int main(int argc, char* argv[])
     LOG(INFO) << "--cpp unit--" << std::endl;
     LOG(INFO) << gflags::ProgramUsage() << std::endl;
 
+    google::ShutDownCommandLineFlags();
+    google::ShutdownGoogleLogging();
     return 0;
 }
