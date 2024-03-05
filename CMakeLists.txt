@@ -29,6 +29,9 @@ else(GFLAGS_FOUND)
 endif(GFLAGS_FOUND)
 
 #
+# find_package(BOOST REQUIRED)
+
+#
 aux_source_directory(${CMAKE_SOURCE_DIR}/src/ SRC_FILES)
 
 add_executable(cpp_unit ${SRC_FILES})

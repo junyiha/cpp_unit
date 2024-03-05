@@ -10,6 +10,7 @@
  */
 
 #include "protocol.hpp"
+#include "abstract_factory.hpp"
 
 void InitGlog(const char *program_path)
 {
@@ -29,6 +30,39 @@ void InitGlog(const char *program_path)
     FLAGS_log_file_header = false;
 }
 
+int abstract_factory()
+{
+    enum class FactoryEnum : unsigned int 
+    {
+        WIN = 1,
+        MAC
+    };
+
+    AbstractFactory::AbstractFactory* fac;
+    FactoryEnum style{FactoryEnum::WIN};
+    
+    switch (style)
+    {
+        case FactoryEnum::WIN:
+        {
+            fac = new AbstractFactory::WinFactory;
+            break;
+        }
+        case FactoryEnum::MAC:
+        {
+            fac = new AbstractFactory::MacFactory;
+            break;
+        }
+        default:
+            LOG(ERROR) << "invalid style\n";
+    }
+
+    AbstractFactory::Button* button = fac->CreateButton();
+    AbstractFactory::Border* border = fac->CreateBorder();
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -39,6 +73,15 @@ int main(int argc, char* argv[])
 
     LOG(INFO) << "--cpp unit--" << std::endl;
     LOG(INFO) << gflags::ProgramUsage() << std::endl;
+
+    if (FLAGS_module == "abstract-factory")
+    {
+        abstract_factory();
+    }
+    else 
+    {
+        LOG(ERROR) << "invalid module argument: " << FLAGS_module << "\n";
+    }
 
     google::ShutDownCommandLineFlags();
     google::ShutdownGoogleLogging();
