@@ -1,5 +1,5 @@
 #
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.20)
 
 #
 project(cpp_unit)
@@ -29,7 +29,13 @@ else(GFLAGS_FOUND)
 endif(GFLAGS_FOUND)
 
 #
-# find_package(BOOST REQUIRED)
+find_package(yaml-cpp REQUIRED PATHS ${CMAKE_SOURCE_DIR}/third_party/yaml-cpp/lib/cmake/yaml-cpp/ NO_DEFAULT_PATH)
+if(yaml-cpp_FOUND)
+    message(STATUS "find yaml-cpp library, include directory: " ${YAML_CPP_INCLUDE_DIR})
+else(yaml-cpp_FOUND)
+    message(FATAL_ERROR "Can not find yaml-cpp library")
+endif(yaml-cpp_FOUND)
+
 
 #
 aux_source_directory(${CMAKE_SOURCE_DIR}/src/ SRC_FILES)
@@ -38,4 +44,4 @@ add_executable(cpp_unit ${SRC_FILES})
 
 target_include_directories(cpp_unit PUBLIC ${CMAKE_SOURCE_DIR}/include/)
 
-target_link_libraries(cpp_unit glog::glog gflags)
+target_link_libraries(cpp_unit glog::glog gflags yaml-cpp::yaml-cpp )
