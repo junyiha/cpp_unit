@@ -180,7 +180,14 @@ int class_with_thread()
         const std::string m_ctx{"aaa"};
 
     public:
-        std::thread m_thread;
+        ~Device()
+        {
+            m_thread_v2.join();
+        }
+
+    public:
+        std::thread* m_thread;
+        std::thread m_thread_v2;
 
         void Print()
         {
@@ -193,14 +200,36 @@ int class_with_thread()
                 }
             };
 
-            m_thread = std::thread(tmp);
+            m_thread = new std::thread(tmp);
+        }
+
+        void Join()
+        {
+            m_thread->join();
+        }
+
+        void PrintV2()
+        {
+            m_thread_v2 = std::thread(print, this);
+        }
+
+    private:
+        static void print(Device *this_ptr)
+        {
+            while(true)
+            {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                LOG(INFO) << "m_ctx: " << this_ptr->m_ctx << "\n";
+            }
         }
     };
 
     Device d;
 
-    d.Print();
-
+    // d.Print();
+    // d.Join();
+    d.PrintV2();
+    
     return 0;
 }
 
@@ -222,6 +251,22 @@ int class_delegating_constructor()
 
     MyClass obj;
 
+    return 0;
+}
+
+int file_to_memory()
+{
+    const std::string path {"/data/home/user/workspace/videoprocess-vcr-job/build/task.json"};
+
+    std::ifstream file_stream(path);
+
+    file_stream.seekg(0, std::ios::end);
+    auto file_size = file_stream.tellg();
+    file_stream.seekg(0, std::ios::beg);
+    std::vector<char> data_buf(file_size);
+    file_stream.read(data_buf.data(), file_size);
+
+    LOG(INFO) << data_buf.data() << "\n";
     return 0;
 }
 
@@ -251,6 +296,10 @@ int main(int argc, char* argv[])
     else if (FLAGS_module == "class-delegating-constructor")
     {
         class_delegating_constructor();
+    }
+    else if (FLAGS_module == "file_to_memory")
+    {
+        file_to_memory();
     }
     else 
     {

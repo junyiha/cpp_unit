@@ -15,6 +15,7 @@
 
 #include <string>
 #include <iostream>
+#include <fstream>
 #include <unordered_map>
 
 #include "glog/logging.h"
