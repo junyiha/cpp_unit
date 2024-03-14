@@ -12,6 +12,11 @@
 #include "protocol.hpp"
 #include "abstract_factory.hpp"
 #include "yaml-cpp/yaml.h"
+#include "nlohmann/json.hpp"
+#include "boost/filesystem.hpp"
+#include "boost/beast.hpp"
+#include "boost/asio.hpp"
+#include "boost/asio/ssl.hpp"
 
 void InitGlog(const char *program_path)
 {
@@ -270,6 +275,90 @@ int file_to_memory()
     return 0;
 }
 
+int list_files()
+{
+    const std::string dir{"/data/home/user/workspace/cpp_unit/"};
+
+    try
+    {
+        if (boost::filesystem::exists(dir) && boost::filesystem::is_directory(dir))
+        {
+            for (const auto& entry : boost::filesystem::directory_iterator(dir))
+            {
+                if (boost::filesystem::is_regular_file(entry.status()))
+                {
+                    LOG(INFO) << "file: " << entry.path().filename() << "\n";
+                }
+            }
+        }
+        else 
+        {
+            LOG(ERROR) << "invalid directory\n";
+        }
+    }
+    catch(const boost::filesystem::filesystem_error& e)
+    {
+        LOG(ERROR) << e.what() << "\n";
+    }
+    
+    return 0;
+}
+
+int request_token()
+{
+    namespace asio = boost::asio;
+    namespace beast = boost::beast;
+    namespace http = beast::http;
+    namespace net = boost::asio;
+    namespace ssl = boost::asio::ssl;
+    using tcp = net::ip::tcp;
+
+    std::string target_addr{"test.ticdata.cn"};
+    std::string path{"/zhgd-gateway/zhgd-cus/openApi/token"};
+
+    net::io_context ioc;
+    ssl::context ctx(ssl::context::sslv23_client);
+
+    ctx.set_verify_mode(ssl::verify_peer);
+    ctx.set_default_verify_paths();
+
+    tcp::resolver resolver(ioc);
+    ssl::stream<tcp::socket> stream(ioc, ctx);
+
+    auto result = resolver.resolve(target_addr, "https");
+    asio::connect(stream.next_layer(), result.begin(), result.end());
+    stream.handshake(ssl::stream_base::client);
+
+    http::request<http::string_body> req{http::verb::post, path, 11};
+    req.set(http::field::host, target_addr);
+    req.set(http::field::connection, "keep-alive");
+    req.set(http::field::accept, "*/*");
+    req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+    req.set(http::field::content_type, "application/json");
+    nlohmann::json send_data;
+    send_data["accountNo"] = "test";
+    send_data["password"] = "12345678";
+    req.body() = send_data.dump();
+    LOG(INFO) << "request's body data: " << req.body() << "\n";
+    LOG(INFO) << "request path: " << req.target() << "\n";
+
+    http::write(stream, req);
+
+    beast::flat_buffer buffer;
+    http::response<http::dynamic_body> res;
+    http::read(stream, buffer, res);
+
+    LOG(INFO) << beast::buffers_to_string(res.body().data()) << "\n";
+    // asio::error_code ec;
+    // stream.shutdown(ec);
+    // if (ec == asio::error::eof)
+    // {
+    //     ec = {};
+    // }
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -297,9 +386,17 @@ int main(int argc, char* argv[])
     {
         class_delegating_constructor();
     }
-    else if (FLAGS_module == "file_to_memory")
+    else if (FLAGS_module == "file-to-memory")
     {
         file_to_memory();
+    }
+    else if (FLAGS_module == "list-files")
+    {
+        list_files();
+    }
+    else if (FLAGS_module == "request-token")
+    {
+        request_token();
     }
     else 
     {

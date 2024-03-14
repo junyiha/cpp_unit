@@ -10,6 +10,23 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_TYPE "Debug")
 
+#
+find_package(OpenSSL REQUIRED)
+if(OpenSSL_FOUND)
+    message(STATUS "find openssl library, include directory: " ${OpenSSL_INCLUDE_DIR})
+else(OpenSSL_FOUND)
+    message(FATAL_ERROR "Can not find openssl library")
+endif(OpenSSL_FOUND)
+
+#
+find_package(Boost 1.83.0 REQUIRED COMPONENTS system filesystem thread)
+if(Boost_FOUND)
+    message(STATUS "find boost library, include directory: " ${Boost_INCLUDE_DIR})
+    message(STATUS "find boost library, libraries directory: " ${Boost_LIBRARY_DIRS})
+    message(STATUS "find boost library, libraries libraries: " ${Boost_LIBRARIES})
+else(Boost_FOUND)
+    message(FATAL_ERROR "Can not find Boost!!!")
+endif(Boost_FOUND)
 
 # 
 find_package(GLOG REQUIRED PATHS ${CMAKE_SOURCE_DIR}/third_party/glog/lib/cmake/glog/ NO_DEFAULT_PATH)
@@ -42,6 +59,6 @@ aux_source_directory(${CMAKE_SOURCE_DIR}/src/ SRC_FILES)
 
 add_executable(cpp_unit ${SRC_FILES})
 
-target_include_directories(cpp_unit PUBLIC ${CMAKE_SOURCE_DIR}/include/)
+target_include_directories(cpp_unit PUBLIC ${Boost_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/include/ ${CMAKE_SOURCE_DIR}/third_party/)
 
-target_link_libraries(cpp_unit glog::glog gflags yaml-cpp::yaml-cpp )
+target_link_libraries(cpp_unit glog::glog gflags yaml-cpp::yaml-cpp Boost::filesystem OpenSSL::SSL OpenSSL::Crypto)
