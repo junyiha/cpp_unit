@@ -11,12 +11,6 @@
 
 #include "protocol.hpp"
 #include "abstract_factory.hpp"
-#include "yaml-cpp/yaml.h"
-#include "nlohmann/json.hpp"
-#include "boost/filesystem.hpp"
-#include "boost/beast.hpp"
-#include "boost/asio.hpp"
-#include "boost/asio/ssl.hpp"
 
 void InitGlog(const char *program_path)
 {
@@ -359,6 +353,375 @@ int request_token()
     return 0;
 }
 
+int httplib_request_token()
+{
+    const std::string host{"test.ticdata.cn"};
+    const std::string path{"/zhgd-gateway/zhgd-cus/openApi/token"};
+    const std::string body_type {"application/json"};
+
+    httplib::SSLClient cli(host);
+    cli.set_connection_timeout(3,0);  // 3 seconds
+    cli.set_read_timeout(5, 0);  // 5 seconds
+    cli.set_write_timeout(5, 0);  // 5 seconds
+    cli.enable_server_certificate_verification(false);
+
+    nlohmann::json send_data;
+    send_data["accountNo"] = "test";
+    send_data["password"] = "12345678";
+    auto res = cli.Post(path, send_data.dump(), body_type);
+    if (res.error() != httplib::Error::Success)
+    {
+        LOG(ERROR) << "failed to send post data: " << send_data.dump() << "\n"
+                   << "request to url: " << host + path << "\n";
+        return -1;
+    }
+
+    LOG(INFO) << "response body: " << res->body << "\n";
+
+    return 0;
+}
+
+int httplib_upload_file()
+{
+    const std::string host{"www.norzoro.cn"};
+    const std::string path{"/api/upload/"};
+
+    httplib::SSLClient cli(host);
+    cli.set_connection_timeout(3,0);  // 3 seconds
+    cli.set_read_timeout(5, 0);  // 5 seconds
+    cli.set_write_timeout(5, 0);  // 5 seconds
+    cli.enable_server_certificate_verification(false);
+
+    std::ifstream input_file("/home/user/Pictures/wallhaven-d58o2l_1920x1080.png", std::ios::in | std::ios::binary);
+    std::ostringstream file_content;
+    file_content << input_file.rdbuf();
+    input_file.close();
+    std::string file_data = file_content.str();
+
+    httplib::MultipartFormDataItems items = {
+        {"path", "media/ai_rk1126/8d514bd3-3cfc-a44f-355a-a91e597ed1f3/2024-03-15/18-40/1-169474517825712.jpg", "", ""},
+        {"image", file_data, "1-1694745178257.jpg", "image/jpeg"}
+    };
+
+    auto res = cli.Post(path, items);
+    if (res.error() != httplib::Error::Success)
+    {
+        LOG(ERROR) << "failed to send multipart/form-data data\n";
+        return -1;
+    }
+
+    LOG(INFO) << "response body: " << res->body << "\n";
+
+    return 0;
+}
+
+int httplib_push_record()
+{
+    // const std::string host{"test.ticdata.cn"};
+    const std::string host{"wisdomsite.ticdata.cn"};
+    const std::string path{"/zhgd-gateway/smart-mon/openApi/addAiData"};
+    const std::string body_type {"application/json"};
+    const std::string image_url{"https://www.norzoro.cn/media/ai_rk1126/8d514bd3-3cfc-a44f-355a-a91e597ed1f3/2024-03-15/18-40/1-169474517825712.jpg"};
+    nlohmann::json send_data;
+
+    send_data["AiDatoDto"]["deviceNo"] = "364f6ecb-bc33-b351-8bd2-95143bb48f39";
+    send_data["AiDatoDto"]["warnType"] = 1;
+    send_data["AiDatoDto"]["warnAt"] = "123";
+    send_data["AiDatoDto"]["warnPic"] = image_url;
+
+    httplib::SSLClient cli(host);
+    cli.set_connection_timeout(3,0);  // 3 seconds
+    cli.set_read_timeout(5, 0);  // 5 seconds
+    cli.set_write_timeout(5, 0);  // 5 seconds
+    cli.enable_server_certificate_verification(false);
+
+    auto res = cli.Post(path, send_data.dump(), body_type);
+    if (res.error() != httplib::Error::Success)
+    {
+        LOG(ERROR) << "failed to send post data: " << send_data.dump() << "\n"
+                   << "request to url: " << host + path << "\n";
+        return -1;
+    }
+
+    LOG(INFO) << "response body: " << res->body << "\n";
+
+    return 0;
+}
+
+std::string request_token_test(const std::string username, const std::string passwd)
+{
+    bool success{false};
+    nlohmann::json parsed_data;
+    std::string token;
+    const std::string host{"test.ticdata.cn"};
+    const std::string path{"/zhgd-gateway/zhgd-cus/openApi/token"};
+    const std::string body_type {"application/json"};
+
+    httplib::SSLClient cli(host);
+    cli.set_connection_timeout(3,0);  // 3 seconds
+    cli.set_read_timeout(5, 0);  // 5 seconds
+    cli.set_write_timeout(5, 0);  // 5 seconds
+    cli.enable_server_certificate_verification(false);
+
+    nlohmann::json send_data;
+    send_data["accountNo"] = username;
+    send_data["password"] = passwd;
+    auto res = cli.Post(path, send_data.dump(), body_type);
+    if (res.error() != httplib::Error::Success)
+    {
+        LOG(ERROR) << "failed to send post data: " << send_data.dump() << "\n"
+                   << "request to url: " << host + path << "\n";
+        return token;
+    }
+
+    LOG(INFO) << "response body: " << res->body << "\n";
+    
+    try
+    {
+        parsed_data = nlohmann::json::parse(res->body);
+        success = parsed_data["success"];
+        if (success)
+        {
+            token = parsed_data["data"]["token"];
+        }
+    }
+    catch(const nlohmann::json::parse_error& e)
+    {
+        LOG(ERROR) << "parse error\n";
+    }
+    catch(const nlohmann::json::type_error& e)
+    {
+        LOG(ERROR) << "type error\n";
+    }    
+
+    return token;
+}
+
+std::tuple<std::string, std::string> get_image_saved_path(const std::string prefix_path, const std::string image_path)
+{
+    std::string save_path;
+
+    save_path = prefix_path;
+
+    auto now = std::chrono::system_clock::now();
+    auto timestamp = std::chrono::system_clock::to_time_t(now);
+    auto now_tm = std::localtime(&timestamp);
+
+    std::stringstream year_name;
+    year_name << std::put_time(now_tm, "%Y-%m-%d");
+    std::stringstream hour_name;
+    hour_name << std::put_time(now_tm, "%H-%M");
+
+    save_path += year_name.str() + "/" + hour_name.str() + "/";
+
+    auto pos = image_path.find_last_of('/');
+    std::string file_name = image_path.substr(pos + 1);
+
+    save_path += file_name;
+
+    return std::make_tuple(file_name, save_path);
+}
+
+int httplib_upload_file_and_push_record()
+{
+    const std::string upload_host{"www.norzoro.cn"};
+    const std::string upload_path{"/api/upload/"};
+    const std::string prefix_path{"media/ai_rk1126/8d514bd3-3cfc-a44f-355a-a91e597ed1f3/"};
+    const std::string image_path{"/home/user/Pictures/wallhaven-d58o2l_1920x1080.png"};
+
+    std::string file_name;
+    std::string saved_path;
+
+    std::tie(file_name, saved_path) = get_image_saved_path(prefix_path, image_path);
+
+    httplib::SSLClient upload_cli(upload_host);
+    upload_cli.set_connection_timeout(3,0);  // 3 seconds
+    upload_cli.set_read_timeout(5, 0);  // 5 seconds
+    upload_cli.set_write_timeout(5, 0);  // 5 seconds
+    upload_cli.enable_server_certificate_verification(false);
+
+    std::ifstream input_file(image_path, std::ios::in | std::ios::binary);
+    std::ostringstream file_content;
+    file_content << input_file.rdbuf();
+    input_file.close();
+    std::string file_data = file_content.str();
+
+    httplib::MultipartFormDataItems items = {
+        {"path", saved_path, "", ""},
+        {"image", file_data, file_name, "image/jpeg"}
+    };
+
+    auto res = upload_cli.Post(upload_path, items);
+    if (res.error() != httplib::Error::Success)
+    {
+        LOG(ERROR) << "failed to send multipart/form-data data\n";
+        return -1;
+    }
+
+    LOG(INFO) << "response body: " << res->body << "\n";
+
+    nlohmann::json parsed_upload_data;
+    int response_code;
+    std::string response_message;
+    try
+    {
+        parsed_upload_data = nlohmann::json::parse(res->body);
+        response_code = parsed_upload_data["code"];
+        response_message = parsed_upload_data["message"];
+    }
+    catch (nlohmann::json::parse_error& e)
+    {
+        LOG(ERROR) << "parse json error\n";
+        return -1;
+    }
+    catch (nlohmann::json::type_error& e)
+    {
+        LOG(ERROR) << "type json error\n";
+        return -1;
+    }
+
+    if (response_code != 1)
+    {
+        LOG(ERROR) << "failed to upload file\n";
+        return -1;
+    }
+
+    const std::string push_host{"test.ticdata.cn"};
+    // const std::string push_host{"wisdomsite.ticdata.cn"};
+    const std::string push_path{"/zhgd-gateway/smart-mon/openApi/addAiData"};
+    const std::string push_body_type {"application/json"};
+    const std::string push_image_url{"https://www.norzoro.cn/media/ai_rk1126/8d514bd3-3cfc-a44f-355a-a91e597ed1f3/2024-03-15/18-40/1-169474517825712.jpg"};
+    const std::string username{"test"};
+    const std::string passwd{"12345678"};
+    std::string push_token;
+    nlohmann::json push_send_data;
+
+    auto now = std::chrono::system_clock::now();
+    auto timestamp = std::chrono::system_clock::to_time_t(now);
+    auto now_tm = std::localtime(&timestamp);
+    std::stringstream warn_time;
+    warn_time << std::put_time(now_tm, "%Y-%m-%d %H:%M:%S");
+    LOG(INFO) << "warning time: " << warn_time.str() << "\n";
+
+    push_send_data["AiDatoDto"]["deviceNo"] = "364f6ecb-bc33-b351-8bd2-95143bb48f39";
+    push_send_data["AiDatoDto"]["warnType"] = 1;
+    push_send_data["AiDatoDto"]["warnAt"] = warn_time.str();
+    push_send_data["AiDatoDto"]["warnPic"] = push_image_url;
+
+    push_token = request_token_test(username, passwd);
+    if (push_token.empty())
+    {
+        LOG(ERROR) << "get token failed\n";
+        return -1;
+    }
+
+    httplib::SSLClient push_cli(push_host);
+    push_cli.set_connection_timeout(3,0);  // 3 seconds
+    push_cli.set_read_timeout(5, 0);  // 5 seconds
+    push_cli.set_write_timeout(5, 0);  // 5 seconds
+    push_cli.enable_server_certificate_verification(false);
+    push_cli.set_basic_auth(username, passwd);
+    push_cli.set_bearer_token_auth(push_token);
+
+    auto push_res = push_cli.Post(push_path, push_send_data.dump(), push_body_type);
+    if (push_res.error() != httplib::Error::Success)
+    {
+        LOG(ERROR) << "failed to send post data: " << push_send_data.dump() << "\n"
+                   << "request to url: " << push_host + push_path << "\n";
+        return -1;
+    }
+
+    LOG(INFO) << "response body: " << push_res->body << "\n";
+    nlohmann::json parsed_push_data;
+    std::string rsp_timestamp;
+    std::string rsp_path;
+    int rsp_status;
+    std::string rsp_error;
+    std::string rsp_message;
+    std::string rsp_request_id;
+    try
+    {
+        parsed_push_data = nlohmann::json::parse(push_res->body);
+        rsp_timestamp = parsed_push_data["timestamp"];
+        rsp_path = parsed_push_data["path"];
+        rsp_status = parsed_push_data["status"];
+        rsp_error = parsed_push_data["error"];
+        rsp_request_id = parsed_push_data["requestId"];
+    }
+    catch (nlohmann::json::parse_error& e)
+    {
+        LOG(ERROR) << "parse json error\n";
+        return -1;
+    }
+    catch (nlohmann::json::type_error& e)
+    {
+        LOG(ERROR) << "type json error\n";
+        return -1;
+    }
+
+    if (rsp_status != 200)
+    {
+        LOG(ERROR) << "failed to push record\n";
+        return -1;
+    }
+
+    LOG(INFO) << "success to push record\n";
+
+    return 0;
+}
+
+int get_year_month_day_hour_minute()
+{
+    auto now = std::chrono::system_clock::now();
+
+    auto timestamp = std::chrono::system_clock::to_time_t(now);
+
+    auto now_tm = std::localtime(&timestamp);
+    
+    LOG(INFO) << "now: " << timestamp << "\n"
+              << "year: " << now_tm->tm_year + 1900 << ", "
+              << "month: " << now_tm->tm_mon + 1 << ", "
+              << "day: " << now_tm->tm_mday << "\n"
+              << "hour: " << now_tm->tm_hour << ", "
+              << "minute: " << now_tm->tm_min << ", "
+              << "second: " << now_tm->tm_sec << "\n";
+    
+    LOG(INFO) << "currently time: " << std::put_time(now_tm, "%Y-%m-%d %H:%M") << "\n";
+
+    std::stringstream year_name;
+    year_name << std::put_time(now_tm, "%Y-%m-%d");
+    std::stringstream hour_name;
+    hour_name << std::put_time(now_tm, "%H-%M");
+    LOG(INFO) << "year_name: " << year_name.str() << ", hour_name: " << hour_name.str() << "\n"; 
+
+    return 0;
+}
+
+int get_save_path()
+{
+    const std::string file_path{"/home/user/Pictures/wallhaven-d58o2l_1920x1080.png"};
+    std::string save_path{"media/ai_rk1126/8d514bd3-3cfc-a44f-355a-a91e597ed1f3/"};
+
+    auto now = std::chrono::system_clock::now();
+    auto timestamp = std::chrono::system_clock::to_time_t(now);
+    auto now_tm = std::localtime(&timestamp);
+
+    std::stringstream year_name;
+    year_name << std::put_time(now_tm, "%Y-%m-%d");
+    std::stringstream hour_name;
+    hour_name << std::put_time(now_tm, "%H-%M");
+
+    save_path += year_name.str() + "/" + hour_name.str() + "/";
+
+    auto pos = file_path.find_last_of('/');
+    std::string file_name = file_path.substr(pos + 1);
+
+    save_path += file_name;
+    LOG(INFO) << "save path: " << save_path << "\n";
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -397,6 +760,30 @@ int main(int argc, char* argv[])
     else if (FLAGS_module == "request-token")
     {
         request_token();
+    }
+    else if (FLAGS_module == "httplib-request-token")
+    {
+        httplib_request_token();
+    }
+    else if (FLAGS_module == "httplib-upload-file")
+    {
+        httplib_upload_file();
+    }
+    else if (FLAGS_module == "httplib-push-record")
+    {
+        httplib_push_record();
+    }
+    else if (FLAGS_module == "httplib-upload-file-and-push-record")
+    {
+        httplib_upload_file_and_push_record();
+    }
+    else if (FLAGS_module == "get-year-month-day-hour-minute")
+    {
+        get_year_month_day_hour_minute();
+    }
+    else if (FLAGS_module == "get-save-path")
+    {
+        get_save_path();
     }
     else 
     {

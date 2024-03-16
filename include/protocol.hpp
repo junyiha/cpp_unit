@@ -13,13 +13,7 @@
 #ifndef CPP_UNIT_PROTOCOL_HPP
 #define CPP_UNIT_PROTOCOL_HPP
 
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <unordered_map>
-
-#include "glog/logging.h"
-#include "gflags/gflags.h"
+#include "cpp_unit.hpp"
 
 namespace Protocol
 {
