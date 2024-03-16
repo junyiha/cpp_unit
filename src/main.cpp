@@ -355,7 +355,8 @@ int request_token()
 
 int httplib_request_token()
 {
-    const std::string host{"test.ticdata.cn"};
+    // const std::string host{"test.ticdata.cn"};
+    const std::string host{"wisdomsite.ticdata.cn"};
     const std::string path{"/zhgd-gateway/zhgd-cus/openApi/token"};
     const std::string body_type {"application/json"};
 
@@ -366,7 +367,8 @@ int httplib_request_token()
     cli.enable_server_certificate_verification(false);
 
     nlohmann::json send_data;
-    send_data["accountNo"] = "test";
+    // send_data["accountNo"] = "test";  // test
+    send_data["accountNo"] = "qian001";
     send_data["password"] = "12345678";
     auto res = cli.Post(path, send_data.dump(), body_type);
     if (res.error() != httplib::Error::Success)
@@ -434,6 +436,7 @@ int httplib_push_record()
     cli.set_read_timeout(5, 0);  // 5 seconds
     cli.set_write_timeout(5, 0);  // 5 seconds
     cli.enable_server_certificate_verification(false);
+    cli.set_basic_auth("qian001", "12345678");
 
     auto res = cli.Post(path, send_data.dump(), body_type);
     if (res.error() != httplib::Error::Success)
