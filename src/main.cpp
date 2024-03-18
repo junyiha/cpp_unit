@@ -451,13 +451,13 @@ int httplib_push_record()
     return 0;
 }
 
-std::string request_token_test(const std::string username, const std::string passwd)
+std::string request_token_test(const std::string host, const std::string username, const std::string passwd)
 {
     bool success{false};
     nlohmann::json parsed_data;
     std::string token;
-    const std::string host{"test.ticdata.cn"};
-    const std::string path{"/zhgd-gateway/zhgd-cus/openApi/token"};
+    // const std::string host{"test.ticdata.cn"};
+    const std::string path{"/zhgd-cus/openApi/token"};
     const std::string body_type {"application/json"};
 
     httplib::SSLClient cli(host);
@@ -589,12 +589,12 @@ int httplib_upload_file_and_push_record()
         return -1;
     }
 
-    const std::string push_host{"test.ticdata.cn"};
-    // const std::string push_host{"wisdomsite.ticdata.cn"};
-    const std::string push_path{"/zhgd-gateway/smart-mon/openApi/addAiData"};
+    // const std::string push_host{"test.ticdata.cn"};
+    const std::string push_host{"wisdomsite.ticdata.cn"};
+    const std::string push_path{"/smart-mon/openApi/addAiData"};
     const std::string push_body_type {"application/json"};
     const std::string push_image_url{"https://www.norzoro.cn/media/ai_rk1126/8d514bd3-3cfc-a44f-355a-a91e597ed1f3/2024-03-15/18-40/1-169474517825712.jpg"};
-    const std::string username{"test"};
+    const std::string username{"qian001"};
     const std::string passwd{"12345678"};
     std::string push_token;
     nlohmann::json push_send_data;
@@ -606,12 +606,12 @@ int httplib_upload_file_and_push_record()
     warn_time << std::put_time(now_tm, "%Y-%m-%d %H:%M:%S");
     LOG(INFO) << "warning time: " << warn_time.str() << "\n";
 
-    push_send_data["AiDatoDto"]["deviceNo"] = "364f6ecb-bc33-b351-8bd2-95143bb48f39";
-    push_send_data["AiDatoDto"]["warnType"] = 1;
-    push_send_data["AiDatoDto"]["warnAt"] = warn_time.str();
-    push_send_data["AiDatoDto"]["warnPic"] = push_image_url;
+    push_send_data["AiDataDto"]["deviceId"] = "10e2a024-211f-1d29-472c-ac4c6d591ccd";
+    push_send_data["AiDataDto"]["warnType"] = 1;
+    push_send_data["AiDataDto"]["warnAt"] = warn_time.str();
+    push_send_data["AiDataDto"]["warnPic"] = push_image_url;
 
-    push_token = request_token_test(username, passwd);
+    push_token = request_token_test(push_host, username, passwd);
     if (push_token.empty())
     {
         LOG(ERROR) << "get token failed\n";
@@ -625,8 +625,13 @@ int httplib_upload_file_and_push_record()
     push_cli.enable_server_certificate_verification(false);
     push_cli.set_basic_auth(username, passwd);
     push_cli.set_bearer_token_auth(push_token);
+    httplib::Headers headers;
+    headers.emplace("Authorization", push_token);
+    headers.emplace("Content-Type", push_body_type);
 
-    auto push_res = push_cli.Post(push_path, push_send_data.dump(), push_body_type);
+    LOG(INFO) << "push data: " << push_send_data.dump() << "\n";
+
+    auto push_res = push_cli.Post(push_path, headers, push_send_data.dump(), push_body_type);
     if (push_res.error() != httplib::Error::Success)
     {
         LOG(ERROR) << "failed to send post data: " << push_send_data.dump() << "\n"
