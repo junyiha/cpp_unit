@@ -19,6 +19,8 @@
 #include <tuple>
 #include <unordered_map>
 
+#include "mongoose/mongoose.h"
+
 #include "glog/logging.h"       // logging
 #include "gflags/gflags.h"      // argument
 #include "yaml-cpp/yaml.h"      // yaml parser

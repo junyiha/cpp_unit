@@ -57,7 +57,10 @@ endif(yaml-cpp_FOUND)
 #
 aux_source_directory(${CMAKE_SOURCE_DIR}/src/ SRC_FILES)
 
-add_executable(cpp_unit ${SRC_FILES})
+#
+aux_source_directory(${CMAKE_SOURCE_DIR}/third_party/mongoose/ MONGOOSE_SRC_FILES)
+
+add_executable(cpp_unit ${SRC_FILES} ${MONGOOSE_SRC_FILES})
 
 target_include_directories(cpp_unit PUBLIC ${Boost_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/include/ ${CMAKE_SOURCE_DIR}/third_party/)
 
