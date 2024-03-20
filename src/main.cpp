@@ -606,10 +606,10 @@ int httplib_upload_file_and_push_record()
     warn_time << std::put_time(now_tm, "%Y-%m-%d %H:%M:%S");
     LOG(INFO) << "warning time: " << warn_time.str() << "\n";
 
-    push_send_data["AiDataDto"]["deviceId"] = "10e2a024-211f-1d29-472c-ac4c6d591ccd";
-    push_send_data["AiDataDto"]["warnType"] = 1;
-    push_send_data["AiDataDto"]["warnAt"] = warn_time.str();
-    push_send_data["AiDataDto"]["warnPic"] = push_image_url;
+    push_send_data["deviceId"] = "10e2a024-211f-1d29-472c-ac4c6d591ccd";
+    push_send_data["warnType"] = 1;
+    push_send_data["warnAt"] = warn_time.str();
+    push_send_data["warnPic"] = push_image_url;
 
     push_token = request_token_test(push_host, username, passwd);
     if (push_token.empty())
