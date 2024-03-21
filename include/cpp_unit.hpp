@@ -41,5 +41,7 @@ extern "C"
     #include <libswscale/swscale.h>
 }
 
+#include "opencv4/opencv2/opencv.hpp"
+
 
 #endif  // CPP_UNIT_HPP

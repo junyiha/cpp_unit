@@ -59,6 +59,15 @@ set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/data/usr/local/ffmpeg/lib/pkgco
 pkg_check_modules(ffmpeg REQUIRED IMPORTED_TARGET libavcodec libavformat libavutil)
 
 #
+find_package(OpenCV REQUIRED)
+if(OpenCV_FOUND)
+    message(STATUS "find opencv library, include directory: " ${OpenCV_INCLUDE_DIRS})
+    message(STATUS "find opencv library, link directory: " ${OpenCV_LIBS})
+else(OpenCV_FOUND)
+    message(FATAL_ERROR "Can not find opencv library")
+endif(OpenCV_FOUND)
+
+#
 aux_source_directory(${CMAKE_SOURCE_DIR}/src/ SRC_FILES)
 
 #
@@ -66,6 +75,6 @@ aux_source_directory(${CMAKE_SOURCE_DIR}/third_party/mongoose/ MONGOOSE_SRC_FILE
 
 add_executable(cpp_unit ${SRC_FILES} ${MONGOOSE_SRC_FILES})
 
-target_include_directories(cpp_unit PUBLIC ${Boost_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/include/ ${CMAKE_SOURCE_DIR}/third_party/)
+target_include_directories(cpp_unit PUBLIC ${Boost_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/include/ ${CMAKE_SOURCE_DIR}/third_party/ ${OpenCV_INCLUDE_DIRS})
 
-target_link_libraries(cpp_unit glog::glog gflags yaml-cpp::yaml-cpp Boost::filesystem OpenSSL::SSL OpenSSL::Crypto PkgConfig::ffmpeg)
+target_link_libraries(cpp_unit glog::glog gflags yaml-cpp::yaml-cpp Boost::filesystem OpenSSL::SSL OpenSSL::Crypto PkgConfig::ffmpeg ${OpenCV_LIBS})

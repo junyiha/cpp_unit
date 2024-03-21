@@ -1000,6 +1000,92 @@ int token_and_push()
     return 0;
 }
 
+int test_ffmpeg_example()
+{
+    AVFormatContext* fm_ctx{nullptr};
+    AVCodec* codec{nullptr};
+    AVStream* stream{nullptr};
+    AVPacket avpkt;
+    AVFrame* frame;
+
+    return 0;
+}
+
+int opencv_sample()
+{
+    const std::string path{"/home/user/zjy-190/Documents/rk_1126/rk_release/static/warning_pictures/ujy94-frame-48569.jpg"};
+    const std::string box_str = R"(
+        {"label":10001,"score":71,"x1":18,"x2":535,"y1":169,"y2":715}
+    )";
+
+    cv::Mat img;
+    img = cv::imread(path);
+    int x1,y1,x2,y2;
+
+    nlohmann::json parse_data;
+    try
+    {
+        parse_data = nlohmann::json::parse(box_str);
+        x1 = parse_data["x1"];
+        y1 = parse_data["y1"];
+        x2 = parse_data["x2"];
+        y2 = parse_data["y2"];
+    }
+    catch(nlohmann::json::parse_error& e)
+    {
+        LOG(ERROR) << "parse error, message: " << e.what() << "\n";
+    }
+    catch(nlohmann::json::type_error& e)
+    {
+        LOG(ERROR) << "type error, message: " << e.what() << "\n";
+    }    
+
+    cv::Point top_left(x1, y1);
+    cv::Point bottom_right(x2, y2);
+
+    cv::rectangle(img, top_left, bottom_right, cv::Scalar(0, 255, 0), 2);
+
+    std::vector<uchar> buffer;
+    std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 95};
+    cv::imencode(".jpg", img, buffer, params);
+
+    const std::string upload_host{"www.norzoro.cn"};
+    const std::string upload_path{"/api/upload/"};
+    const std::string prefix_path{"media/ai_rk1126/8d514bd3-3cfc-a44f-355a-a91e597ed1f3/"};
+    std::string file_name;
+    std::string saved_path;
+
+    std::tie(file_name, saved_path) = get_image_saved_path(prefix_path, path);
+    LOG(INFO) << "saved_path: " << saved_path << "\n";
+
+    httplib::SSLClient upload_cli(upload_host);
+    upload_cli.set_connection_timeout(3,0);  // 3 seconds
+    upload_cli.set_read_timeout(5, 0);  // 5 seconds
+    upload_cli.set_write_timeout(5, 0);  // 5 seconds
+    upload_cli.enable_server_certificate_verification(false);
+
+    std::string file_data(buffer.begin(), buffer.end());
+
+    httplib::MultipartFormDataItems items = {
+        {"path", saved_path, "", ""},
+        {"image", file_data, file_name, "image/jpeg"}
+    };
+
+    auto res = upload_cli.Post(upload_path, items);
+    if (res.error() != httplib::Error::Success)
+    {
+        LOG(ERROR) << "failed to send multipart/form-data data\n";
+        return -1;
+    }
+
+    LOG(INFO) << "response body: " << res->body << "\n";
+
+    cv::imshow("tmp", img);
+    cv::waitKey(0);
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -1082,6 +1168,10 @@ int main(int argc, char* argv[])
     else if (FLAGS_module == "token-and-push")
     {
         token_and_push();
+    }
+    else if (FLAGS_module == "opencv-sample")
+    {
+        opencv_sample();
     }
     else 
     {
