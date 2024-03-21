@@ -355,8 +355,8 @@ int request_token()
 
 int httplib_request_token()
 {
-    // const std::string host{"test.ticdata.cn"};
-    const std::string host{"wisdomsite.ticdata.cn"};
+    const std::string host{"test.ticdata.cn"};
+    // const std::string host{"wisdomsite.ticdata.cn"};
     const std::string path{"/zhgd-gateway/zhgd-cus/openApi/token"};
     const std::string body_type {"application/json"};
 
@@ -457,7 +457,8 @@ std::string request_token_test(const std::string host, const std::string usernam
     nlohmann::json parsed_data;
     std::string token;
     // const std::string host{"test.ticdata.cn"};
-    const std::string path{"/zhgd-cus/openApi/token"};
+    const std::string path{"/zhgd-gateway/zhgd-cus/openApi/token"};
+    // const std::string path{"/zhgd-cus/openApi/token"};
     const std::string body_type {"application/json"};
 
     httplib::SSLClient cli(host);
@@ -589,9 +590,10 @@ int httplib_upload_file_and_push_record()
         return -1;
     }
 
-    // const std::string push_host{"test.ticdata.cn"};
-    const std::string push_host{"wisdomsite.ticdata.cn"};
-    const std::string push_path{"/smart-mon/openApi/addAiData"};
+    const std::string push_host{"test.ticdata.cn"};
+    // const std::string push_host{"wisdomsite.ticdata.cn"};
+    // const std::string push_path{"/smart-mon/openApi/addAiData"};
+    const std::string push_path{"/zhgd-gateway/smart-mon/openApi/addAiData"};
     const std::string push_body_type {"application/json"};
     const std::string push_image_url{"https://www.norzoro.cn/media/ai_rk1126/8d514bd3-3cfc-a44f-355a-a91e597ed1f3/2024-03-15/18-40/1-169474517825712.jpg"};
     const std::string username{"qian001"};
@@ -606,7 +608,7 @@ int httplib_upload_file_and_push_record()
     warn_time << std::put_time(now_tm, "%Y-%m-%d %H:%M:%S");
     LOG(INFO) << "warning time: " << warn_time.str() << "\n";
 
-    push_send_data["deviceId"] = "10e2a024-211f-1d29-472c-ac4c6d591ccd";
+    push_send_data["deviceNo"] = "10e2a024-211f-1d29-472c-ac4c6d591ccd";
     push_send_data["warnType"] = 1;
     push_send_data["warnAt"] = warn_time.str();
     push_send_data["warnPic"] = push_image_url;
@@ -623,8 +625,8 @@ int httplib_upload_file_and_push_record()
     push_cli.set_read_timeout(5, 0);  // 5 seconds
     push_cli.set_write_timeout(5, 0);  // 5 seconds
     push_cli.enable_server_certificate_verification(false);
-    push_cli.set_basic_auth(username, passwd);
-    push_cli.set_bearer_token_auth(push_token);
+    // push_cli.set_basic_auth(username, passwd);
+    // push_cli.set_bearer_token_auth(push_token);
     httplib::Headers headers;
     headers.emplace("Authorization", push_token);
     headers.emplace("Content-Type", push_body_type);
@@ -831,6 +833,173 @@ int http_server_with_mongoose()
     return 0;
 }
 
+int test_son_call_parent_func()
+{
+    class Parent
+    {
+    public:
+        void parentFunction()
+        {
+            LOG(INFO) << "this is a parent function\n";
+        }
+    };
+
+    class child : public Parent
+    {
+    public:
+        void childFunction()
+        {
+            LOG(INFO) << "this is the child function \n";
+        }
+
+        void callParentFunction()
+        {
+            parentFunction();
+        }
+    };
+
+    child c;
+    c.callParentFunction();
+
+    return 0;
+}
+
+int decorator_sample()
+{
+    class Coffee
+    {
+    public:
+        virtual void serve() const = 0;
+    };
+
+    class SimpleCoffee : public Coffee
+    {
+    public:
+        void serve() const override 
+        {
+            LOG(INFO) << "Simple Coffee\n";
+        };
+    };
+
+    class CoffeeDecorator : public Coffee
+    {
+    protected:
+        Coffee* coffee;
+
+    public:
+        CoffeeDecorator(Coffee* coffee) : coffee(coffee) 
+        {
+
+        }
+        
+        void serve() const override 
+        {  
+            coffee->serve();
+        }
+    };
+
+    class MilkDecorator : public CoffeeDecorator 
+    {
+    public:
+        MilkDecorator(Coffee* coffee) : CoffeeDecorator(coffee)
+        {
+
+        }
+
+        void serve() const override
+        {
+            CoffeeDecorator::serve();
+            LOG(INFO) << " + milk\n";
+        }
+    };
+
+    Coffee* coffee = new SimpleCoffee();
+    coffee->serve();
+
+    Coffee* coffeeWithMilk = new MilkDecorator(coffee);
+    coffeeWithMilk->serve();
+
+    delete coffee;
+    delete coffeeWithMilk;
+
+    return 0;
+}
+
+int test_task_use_service()
+{
+    class Service;
+
+    class Task
+    {
+    private:
+        Service* service;
+
+    public:
+        void Robot()
+        {
+
+        }
+    };
+
+    class Service
+    {
+    private:
+        Task m_task;
+
+    public:
+        void SendRobot()
+        {
+            LOG(INFO) << "in service, send to robot\n";
+        }
+    };
+
+    Service service;
+
+    service.SendRobot();
+
+    class Base 
+    {
+    public:
+        virtual void foo()
+        {
+            LOG(INFO) << "Base::foo()\n";
+        }
+    };
+
+    class Derived : public Base 
+    {
+    public:
+        void foo() override
+        {
+            LOG(INFO) << "Derived::foo()\n";
+        }
+    };
+    
+    Base* base_ptr = new Derived();
+    base_ptr->foo();
+    delete base_ptr;
+
+    return 0;
+}
+
+int token_and_push()
+{
+    const std::string addr{"https://test.ticdata.cn/zhgd-gateway/zhgd-cus/openApi/token&https://test.ticdata.cn/zhgd-gateway/smart-mon/openApi/addAiData"};
+
+    std::string token_addr;
+    std::string push_addr;
+
+    auto pos = addr.find_first_of('&');
+    token_addr = addr.substr(0, pos);
+    push_addr = addr.substr(pos + 1);
+
+    LOG(INFO) << "unprocess address: " << addr << "\n"
+              << "token address: " << token_addr << "\n"
+              << "push address: " << push_addr << "\n";
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -897,6 +1066,22 @@ int main(int argc, char* argv[])
     else if (FLAGS_module == "http-server-with-mongoose")
     {
         http_server_with_mongoose();
+    }
+    else if (FLAGS_module == "test-son-call-parent-func")
+    {
+        test_son_call_parent_func();
+    }
+    else if (FLAGS_module == "decorator-sample")
+    {
+        decorator_sample();
+    }
+    else if (FLAGS_module == "test-task-use-service")
+    {
+        test_task_use_service();
+    }
+    else if (FLAGS_module == "token-and-push")
+    {
+        token_and_push();
     }
     else 
     {

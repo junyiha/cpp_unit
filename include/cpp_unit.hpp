@@ -34,5 +34,12 @@
 #include "boost/asio.hpp"
 #include "boost/asio/ssl.hpp"
 
+extern "C"
+{
+    #include <libavcodec/avcodec.h>
+    #include <libavformat/avformat.h>
+    #include <libswscale/swscale.h>
+}
+
 
 #endif  // CPP_UNIT_HPP

@@ -53,6 +53,10 @@ else(yaml-cpp_FOUND)
     message(FATAL_ERROR "Can not find yaml-cpp library")
 endif(yaml-cpp_FOUND)
 
+#
+find_package(PkgConfig REQUIRED)
+set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/data/usr/local/ffmpeg/lib/pkgconfig")
+pkg_check_modules(ffmpeg REQUIRED IMPORTED_TARGET libavcodec libavformat libavutil)
 
 #
 aux_source_directory(${CMAKE_SOURCE_DIR}/src/ SRC_FILES)
@@ -64,4 +68,4 @@ add_executable(cpp_unit ${SRC_FILES} ${MONGOOSE_SRC_FILES})
 
 target_include_directories(cpp_unit PUBLIC ${Boost_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/include/ ${CMAKE_SOURCE_DIR}/third_party/)
 
-target_link_libraries(cpp_unit glog::glog gflags yaml-cpp::yaml-cpp Boost::filesystem OpenSSL::SSL OpenSSL::Crypto)
+target_link_libraries(cpp_unit glog::glog gflags yaml-cpp::yaml-cpp Boost::filesystem OpenSSL::SSL OpenSSL::Crypto PkgConfig::ffmpeg)
