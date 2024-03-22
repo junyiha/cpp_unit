@@ -179,6 +179,10 @@ int class_with_thread()
         const std::string m_ctx{"aaa"};
 
     public:
+        Device():m_thread_v2(std::bind(&Device::PrintCallBack, this))
+        {
+
+        }
         ~Device()
         {
             m_thread_v2.join();
@@ -212,6 +216,20 @@ int class_with_thread()
             m_thread_v2 = std::thread(print, this);
         }
 
+        void PrintCallBack()
+        {
+            while(true)
+            {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+                LOG(INFO) << "m_ctx: " << m_ctx << "\n";
+            }
+        }
+
+        void PrintV3()
+        {
+            
+        }
+
     private:
         static void print(Device *this_ptr)
         {
@@ -227,7 +245,9 @@ int class_with_thread()
 
     // d.Print();
     // d.Join();
-    d.PrintV2();
+    // d.PrintV2();
+    LOG(INFO) << "print v3\n";
+    d.PrintV3();
     
     return 0;
 }
@@ -1043,7 +1063,7 @@ int opencv_sample()
     cv::Point top_left(x1, y1);
     cv::Point bottom_right(x2, y2);
 
-    cv::rectangle(img, top_left, bottom_right, cv::Scalar(0, 255, 0), 2);
+    cv::rectangle(img, top_left, bottom_right, cv::Scalar(0, 0, 255), 2);
 
     std::vector<uchar> buffer;
     std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 95};
