@@ -1106,6 +1106,47 @@ int opencv_sample()
     return 0;
 }
 
+// 回调函数，用于处理收到的数据
+size_t WriteCallback(void *contents, size_t size, size_t nmemb, std::string *stream) {
+    size_t total_size = size * nmemb;
+    stream->append((char *)contents, total_size);
+    return total_size;
+}
+
+int curl_example()
+{
+    CURL* curl;
+    CURLcode res;
+    std::string response;
+    nlohmann::json body_data;
+
+    body_data["id"] = "1001";
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    curl = curl_easy_init();
+    if (curl)
+    {
+        curl_easy_setopt(curl, CURLOPT_URL, "http://192.169.0.152:13001/api/robot/status");
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body_data.dump().c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK)
+        {
+            LOG(ERROR) << "failed to perform request: " << curl_easy_strerror(res) << "\n";
+        }
+        LOG(INFO) << response << "\n";
+
+        curl_easy_cleanup(curl);
+    }
+
+    curl_global_cleanup();
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -1192,6 +1233,10 @@ int main(int argc, char* argv[])
     else if (FLAGS_module == "opencv-sample")
     {
         opencv_sample();
+    }
+    else if (FLAGS_module == "curl-example")
+    {
+        curl_example();
     }
     else 
     {

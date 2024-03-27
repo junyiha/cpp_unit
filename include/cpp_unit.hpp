@@ -43,5 +43,7 @@ extern "C"
 
 #include "opencv4/opencv2/opencv.hpp"
 
+#include "curl/curl.h"
+
 
 #endif  // CPP_UNIT_HPP

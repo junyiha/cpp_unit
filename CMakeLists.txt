@@ -68,6 +68,14 @@ else(OpenCV_FOUND)
 endif(OpenCV_FOUND)
 
 #
+find_package(CURL REQUIRED)
+if(CURL_FOUND)
+    message(STATUS "find curl library, include directory: " ${CURL_INCLUDE_DIRS})
+else(CURL_FOUND)
+    message(FATAL_ERROR "Can not find curl library")
+endif(CURL_FOUND)
+
+#
 aux_source_directory(${CMAKE_SOURCE_DIR}/src/ SRC_FILES)
 
 #
@@ -75,6 +83,19 @@ aux_source_directory(${CMAKE_SOURCE_DIR}/third_party/mongoose/ MONGOOSE_SRC_FILE
 
 add_executable(cpp_unit ${SRC_FILES} ${MONGOOSE_SRC_FILES})
 
-target_include_directories(cpp_unit PUBLIC ${Boost_INCLUDE_DIR} ${CMAKE_SOURCE_DIR}/include/ ${CMAKE_SOURCE_DIR}/third_party/ ${OpenCV_INCLUDE_DIRS})
+target_include_directories(cpp_unit PUBLIC ${Boost_INCLUDE_DIR} 
+                                           ${CMAKE_SOURCE_DIR}/include/ 
+                                           ${CMAKE_SOURCE_DIR}/third_party/ 
+                                           ${OpenCV_INCLUDE_DIRS}
+                          )
 
-target_link_libraries(cpp_unit glog::glog gflags yaml-cpp::yaml-cpp Boost::filesystem OpenSSL::SSL OpenSSL::Crypto PkgConfig::ffmpeg ${OpenCV_LIBS})
+target_link_libraries(cpp_unit glog::glog 
+                               gflags 
+                               yaml-cpp::yaml-cpp 
+                               Boost::filesystem 
+                               OpenSSL::SSL 
+                               OpenSSL::Crypto 
+                               PkgConfig::ffmpeg 
+                               ${OpenCV_LIBS}
+                               CURL::libcurl
+                     )
