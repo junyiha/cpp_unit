@@ -1147,6 +1147,96 @@ int curl_example()
     return 0;
 }
 
+int ffmpeg_record_video()
+{
+    avformat_network_init();
+
+    AVFormatContext* p_format_ctx = avformat_alloc_context();
+    AVDictionary* options{nullptr};
+    av_dict_set(&options, "rtsp_transport", "tcp", 0);
+
+    int result;
+    std::string rtsp_url{"rtsp://admin:abcd1234@192.169.8.153"};
+    std::string output_file{"/tmp/output.mp4"};
+    int duration{60};
+
+    result = avformat_open_input(&p_format_ctx, rtsp_url.c_str(), nullptr, &options);
+    if (result != 0)
+    {
+        LOG(ERROR) << "open rtsp failed\n";
+        return result;
+    }
+
+    result = avformat_find_stream_info(p_format_ctx, nullptr);
+    if (result < 0)
+    {
+        LOG(ERROR) << "get stream information failed\n";
+        return result;
+    }
+
+    AVFormatContext* p_output_format_ctx;
+    result = avformat_alloc_output_context2(&p_output_format_ctx, nullptr, nullptr, output_file.c_str());
+    if (result < 0)
+    {
+        LOG(ERROR) << "config output format failed\n";
+        return result;
+    }
+
+    AVStream* p_stream = avformat_new_stream(p_output_format_ctx, nullptr);
+    if (!p_stream)
+    {
+        LOG(ERROR) << "create output stream failed\n";
+        return result;
+    }
+
+    result = avcodec_parameters_copy(p_stream->codecpar, p_format_ctx->streams[0]->codecpar);
+    if (result < 0)
+    {
+        LOG(ERROR) << "copy codec argument failed\n";
+        return result;
+    }
+
+    if (!(p_output_format_ctx->oformat->flags & AVFMT_NOFILE))
+    {
+        result = avio_open(&p_output_format_ctx->pb, output_file.c_str(), AVIO_FLAG_WRITE);
+        if (result < 0)
+        {
+            LOG(ERROR) << "open output file failed\n";
+            return result;
+        }
+    }
+
+    result = avformat_write_header(p_output_format_ctx, nullptr);
+
+    AVPacket packet;
+    int64_t start_time = av_gettime();
+    int64_t end_time = start_time + duration * 1000'000;
+
+    while (av_read_frame(p_format_ctx, &packet) >= 0)
+    {
+        if (av_gettime() >= end_time)
+        {
+            break;
+        }
+
+        av_packet_rescale_ts(&packet, p_format_ctx->streams[0]->time_base, p_stream->time_base);
+        packet.stream_index = p_stream->index;
+
+        av_interleaved_write_frame(p_output_format_ctx, &packet);
+        av_packet_unref(&packet);
+    }
+
+    av_write_trailer(p_output_format_ctx);
+
+    avformat_close_input(&p_format_ctx);
+    avio_closep(&p_output_format_ctx->pb);
+    avformat_free_context(p_output_format_ctx);
+
+    av_dict_free(&options);
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -1237,6 +1327,10 @@ int main(int argc, char* argv[])
     else if (FLAGS_module == "curl-example")
     {
         curl_example();
+    }
+    else if (FLAGS_module == "ffmpeg-record-video")
+    {
+        ffmpeg_record_video();
     }
     else 
     {
