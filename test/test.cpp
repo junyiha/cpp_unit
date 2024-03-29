@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include <string>
 
 extern "C"
@@ -256,6 +257,20 @@ private:
     }
 };
 
+
+int call_command_tool()
+{
+    std::stringstream cmd_stream;
+    std::string body_str{R"({"sn": "ls20://0201EE5E4D31","type": "req","name": "songs_queue_list"})"};
+
+    cmd_stream << "curl -X POST http://192.168.0.101:8888 --header 'Content-Type: application/json' --data-raw '" << body_str << "'";
+    std::cout << "cmd_stream: " << cmd_stream.str();
+
+    std::system(cmd_stream.str().c_str());
+
+    return 0;
+}
+
 int main(int argc, char* argv[])
 {
     if (argc <= 1)
@@ -278,6 +293,10 @@ int main(int argc, char* argv[])
     else if (cmd == "clear")
     {
         tool.ClearMedia();
+    }
+    else if (cmd == "call-cmd")
+    {
+        call_command_tool();
     }
     else 
     {

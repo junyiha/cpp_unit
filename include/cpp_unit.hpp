@@ -40,11 +40,15 @@ extern "C"
     #include <libavformat/avformat.h>
     #include <libswscale/swscale.h>
     #include <libavutil/time.h>
+    #include <libavutil/imgutils.h>
 }
 
 #include "opencv4/opencv2/opencv.hpp"
 
 #include "curl/curl.h"
+
+#include "openssl/bio.h"
+#include "openssl/buffer.h"
 
 
 #endif  // CPP_UNIT_HPP

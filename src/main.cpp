@@ -1237,6 +1237,206 @@ int ffmpeg_record_video()
     return 0;
 }
 
+int call_command_tool()
+{
+    std::stringstream cmd_stream;
+    std::string body_str{R"({"sn": "ls20://0201EE5E4D31","type": "req","name": "songs_queue_list"})"};
+
+    cmd_stream << "curl -X POST http://192.168.0.101:8888 --header 'Content-Type: application/json' --data-raw '" << body_str << "'";
+    std::cout << "cmd_stream: " << cmd_stream.str();
+
+    std::system(cmd_stream.str().c_str());
+
+    return 0;
+}
+
+// 函数用于进行 base64 解码
+unsigned char *base64_decode(const char *input, int length) {
+    BIO *bio, *b64;
+    unsigned char *buffer = (unsigned char *)malloc(length);
+    memset(buffer, 0, length);
+
+    b64 = BIO_new(BIO_f_base64());
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+    bio = BIO_new_mem_buf((void *)input, length);
+    bio = BIO_push(b64, bio);
+
+    BIO_read(bio, buffer, length);
+
+    BIO_free_all(bio);
+
+    return buffer;
+}
+
+int test_master_camera_get_rgb()
+{
+    CURL* curl;
+    CURLcode res;
+    std::string response;
+    nlohmann::json body_data;
+
+    body_data["id"] = "d9b040968baf4d57152f3a99b3dee3ed";
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    curl = curl_easy_init();
+    if (curl)
+    {
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_easy_setopt(curl, CURLOPT_URL, "http://127.0.0.1:13001/api/camera/getRGB");
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+        struct curl_slist *headers{nullptr};
+        headers = curl_slist_append(headers, "User-Agent: Apifox/1.0.0 (https://apifox.com)");
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        headers = curl_slist_append(headers, "Accept: */*");
+        headers = curl_slist_append(headers, "Host: 127.0.0.1:13001");
+        headers = curl_slist_append(headers, "Connection: keep-alive");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        const char *data = "{\n    \"id\": \"d9b040968baf4d57152f3a99b3dee3ed\"\n}";
+        LOG(INFO) << body_data.dump().c_str() << "\n";
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK)
+        {
+            LOG(ERROR) << "failed to perform request: " << curl_easy_strerror(res) << "\n";
+        }
+        LOG(INFO) << response << "\n";
+
+        curl_easy_cleanup(curl);
+    }
+
+    nlohmann::json parsed_data = nlohmann::json::parse(response);
+    std::string image_str = parsed_data["image"];
+    
+    auto data_ptr = base64_decode(image_str.c_str(), image_str.size());
+    std::ofstream output_file("/tmp/aaa.jpg", std::ios::binary);
+    output_file.write(reinterpret_cast<char *>(data_ptr), image_str.size());
+    output_file.close();
+
+    curl_global_cleanup();
+
+    return 0;
+}
+
+int ffmpeg_record_to_jpg()
+{
+    int result;
+    std::string rtsp_url{"rtsp://admin:abcd1234@192.169.8.153"};
+
+    AVFormatContext* p_format_ctx = avformat_alloc_context();
+    AVDictionary* options{nullptr};
+    av_dict_set(&options, "rtsp_transport", "tcp", 0);
+
+    avformat_network_init();
+    result = avformat_open_input(&p_format_ctx, rtsp_url.c_str(), nullptr, &options);
+    if (result != 0)
+    {
+        LOG(ERROR) << "open rtsp failed\n";
+        return result;
+    }
+    
+    result = avformat_find_stream_info(p_format_ctx, nullptr);
+    if (result < 0)
+    {
+        LOG(ERROR) << "get stream information failed\n";
+        return result;
+    }
+
+    int video_stream{-1};
+    for (unsigned int i = 0; i < p_format_ctx->nb_streams; i++)
+    {
+        if (p_format_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+        {
+            video_stream = i;
+            break;
+        }
+    }
+    if (video_stream == -1)
+    {
+        LOG(ERROR) << "no video stream found in the input file\n";
+        return result;
+    }
+
+    AVCodecParameters* codec_parameters = p_format_ctx->streams[video_stream]->codecpar;
+    AVCodec* p_codec = const_cast<AVCodec*>(avcodec_find_decoder(codec_parameters->codec_id));
+    if (!p_codec)
+    {
+        LOG(ERROR) << "codec not found\n";
+        return result;
+    }
+
+    AVCodecContext* p_codec_ctx = avcodec_alloc_context3(p_codec);
+    avcodec_parameters_to_context(p_codec_ctx, codec_parameters);
+    avcodec_open2(p_codec_ctx, p_codec, nullptr);
+
+    AVFrame* p_frame = av_frame_alloc();
+    int frame_count{0};
+    AVPacket packet;
+    while (av_read_frame(p_format_ctx, &packet) >= 0)
+    {
+        if (packet.stream_index == video_stream)
+        {
+            avcodec_send_packet(p_codec_ctx, &packet);
+            avcodec_receive_frame(p_codec_ctx, p_frame);
+
+            SwsContext* sws_ctx = sws_getContext(p_codec_ctx->width, p_codec_ctx->height, p_codec_ctx->pix_fmt, p_codec_ctx->width, p_codec_ctx->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, nullptr, nullptr, nullptr);
+            AVFrame* rgb_frame = av_frame_alloc();
+            uint8_t* rgb_buffer = new uint8_t[av_image_get_buffer_size(AV_PIX_FMT_RGB24, p_codec_ctx->width, p_codec_ctx->height, 1)];
+            sws_scale(sws_ctx, p_frame->data, p_frame->linesize, 0, p_codec_ctx->height, rgb_frame->data, rgb_frame->linesize);
+            sws_freeContext(sws_ctx);
+
+            std::string file_name = "/tmp/frame_" + std::to_string(frame_count) + ".jpg";
+            std::ofstream output_file(file_name, std::ios::binary);
+            if (output_file.is_open())
+            {
+                AVCodec* jpeg_codec = const_cast<AVCodec*>(avcodec_find_encoder(AV_CODEC_ID_MJPEG));
+                AVCodecContext* jpeg_codec_ctx = avcodec_alloc_context3(jpeg_codec);
+                jpeg_codec_ctx->width = p_codec_ctx->width;
+                jpeg_codec_ctx->height = p_codec_ctx->height;
+                jpeg_codec_ctx->pix_fmt = AV_PIX_FMT_RGB24;
+                avcodec_open2(jpeg_codec_ctx, jpeg_codec, nullptr);
+
+                AVPacket jpeg_packet;
+
+                int ret = avcodec_send_frame(jpeg_codec_ctx, rgb_frame);
+                if (ret >= 0)
+                {
+                    ret = avcodec_receive_packet(jpeg_codec_ctx, &jpeg_packet);
+                }
+
+                if (ret >= 0)
+                {
+                    output_file.write(reinterpret_cast<char *>(jpeg_packet.data), jpeg_packet.size);
+                }
+
+                output_file.close();
+                if (!jpeg_packet.buf)
+                {
+                    av_packet_unref(&jpeg_packet);
+                }
+                avcodec_free_context(&jpeg_codec_ctx);
+            }
+
+            av_frame_free(&rgb_frame);
+            delete[] rgb_buffer;
+
+            frame_count++;
+        }
+
+        av_packet_unref(&packet);
+    }
+
+    av_frame_free(&p_frame);
+    avcodec_close(p_codec_ctx);
+    avcodec_free_context(&p_codec_ctx);
+    avformat_close_input(&p_format_ctx);
+
+    return result;
+}
+
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -1331,6 +1531,14 @@ int main(int argc, char* argv[])
     else if (FLAGS_module == "ffmpeg-record-video")
     {
         ffmpeg_record_video();
+    }
+    else if (FLAGS_module == "test-master-camera-get-rgb")
+    {
+        test_master_camera_get_rgb();
+    }
+    else if (FLAGS_module == "ffmpeg-record-to-jpg")
+    {
+        ffmpeg_record_to_jpg();
     }
     else 
     {

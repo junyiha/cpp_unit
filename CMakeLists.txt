@@ -56,7 +56,7 @@ endif(yaml-cpp_FOUND)
 #
 find_package(PkgConfig REQUIRED)
 set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/data/usr/local/ffmpeg/lib/pkgconfig")
-pkg_check_modules(ffmpeg REQUIRED IMPORTED_TARGET libavcodec libavformat libavutil)
+pkg_check_modules(ffmpeg REQUIRED IMPORTED_TARGET libavcodec libavformat libavutil libswscale)
 
 #
 find_package(OpenCV REQUIRED)
