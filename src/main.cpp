@@ -1436,6 +1436,37 @@ int ffmpeg_record_to_jpg()
     return result;
 }
 
+int robot_pose_compute()
+{
+    const Eigen::Vector3d axis_x(1, 0, 0);
+    const Eigen::Vector3d axis_y(0, 1, 0);
+    const Eigen::Vector3d axis_z(0, 0, 1);
+    std::vector<double> pose_offset{180, 0, 90};
+
+    std::transform(pose_offset.begin(), pose_offset.end(), pose_offset.begin(), [](double val){return val * M_PI / 180.0;});
+
+    Eigen::AngleAxisd angle_axisd_x(pose_offset.at(0), axis_x);
+    Eigen::Matrix3d rotation_matrix_x = angle_axisd_x.matrix();
+
+    Eigen::AngleAxisd angle_axisd_y(pose_offset.at(1), axis_y);
+    Eigen::Matrix3d rotation_matrix_y = angle_axisd_y.matrix();
+
+    Eigen::AngleAxisd angle_axisd_z(pose_offset.at(2), axis_z);
+    Eigen::Matrix3d rotation_matrix_z = angle_axisd_z.matrix();
+
+    Eigen::Matrix3d rotation_target = rotation_matrix_z * rotation_matrix_y * rotation_matrix_x;
+    Eigen::AngleAxisd angle_axisd_target(rotation_target);
+    
+    Eigen::Vector3d rotate_vector_target = angle_axisd_target.angle() * angle_axisd_target.axis();
+
+    LOG(INFO) << "rotate_vector: \n"
+              << rotate_vector_target.x() << ", " 
+              << rotate_vector_target.y() << ", " 
+              << rotate_vector_target.z() << "\n" ;
+
+    return 0;
+}
+
 
 DEFINE_string(module, "design", "module layer");
 
@@ -1539,6 +1570,10 @@ int main(int argc, char* argv[])
     else if (FLAGS_module == "ffmpeg-record-to-jpg")
     {
         ffmpeg_record_to_jpg();
+    }
+    else if (FLAGS_module == "robot-pose-compute")
+    {
+        robot_pose_compute();
     }
     else 
     {

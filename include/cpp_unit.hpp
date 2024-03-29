@@ -21,6 +21,8 @@
 
 #include "mongoose/mongoose.h"
 
+#include "eigen3/Eigen/Dense"
+
 #include "glog/logging.h"       // logging
 #include "gflags/gflags.h"      // argument
 #include "yaml-cpp/yaml.h"      // yaml parser
@@ -49,6 +51,5 @@ extern "C"
 
 #include "openssl/bio.h"
 #include "openssl/buffer.h"
-
 
 #endif  // CPP_UNIT_HPP
