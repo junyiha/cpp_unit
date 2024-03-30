@@ -1467,6 +1467,62 @@ int robot_pose_compute()
     return 0;
 }
 
+int multi_images_to_video_in_opencv()
+{
+    const std::string dir{"/data/static/warning_pictures/"};
+    const std::string output_video_file{"/data/static/warning_pictures/leave_job.avi"};
+    std::vector<std::string> image_path_container;
+
+    try
+    {
+        if (boost::filesystem::exists(dir) && boost::filesystem::is_directory(dir))
+        {
+            for (const auto& entry : boost::filesystem::directory_iterator(dir))
+            {
+                if (boost::filesystem::is_regular_file(entry.status()))
+                {
+                    LOG(INFO) << "file: " << entry.path().filename() << "\n";
+                    image_path_container.push_back(dir + entry.path().filename().string());
+                }
+            }
+        }
+        else 
+        {
+            LOG(ERROR) << "invalid directory\n";
+        }
+    }
+    catch(const boost::filesystem::filesystem_error& e)
+    {
+        LOG(ERROR) << e.what() << "\n";
+    }
+
+    std::vector<cv::Mat> image_container;
+    int height, width;
+    for (auto& it : image_path_container)
+    {
+        LOG(INFO) << "image: " << it << "\n";
+        cv::Mat tmp_img = cv::imread(it);
+        image_container.push_back(tmp_img);
+        height = tmp_img.rows;
+        width = tmp_img.cols;
+    }
+
+    cv::VideoWriter video_writer(output_video_file, cv::VideoWriter::fourcc('M','J','P','G'), 2, cv::Size(width, height));
+    if (!video_writer.isOpened())
+    {
+        LOG(ERROR) << "could not open the output video file for writing\n";
+        return -1;
+    }
+
+    for (auto& it : image_container)
+    {
+        video_writer.write(it);
+    }
+
+    LOG(INFO) << "video has been successfully create and saved as: " << output_video_file << "\n";
+
+    return 0;
+}
 
 DEFINE_string(module, "design", "module layer");
 
@@ -1574,6 +1630,10 @@ int main(int argc, char* argv[])
     else if (FLAGS_module == "robot-pose-compute")
     {
         robot_pose_compute();
+    }
+    else if (FLAGS_module == "multi-images-to-video-in-opencv")
+    {
+        multi_images_to_video_in_opencv();
     }
     else 
     {
