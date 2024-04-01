@@ -1535,109 +1535,43 @@ int main(int argc, char* argv[])
     LOG(INFO) << "--cpp unit--" << std::endl;
     LOG(INFO) << gflags::ProgramUsage() << std::endl;
 
-    if (FLAGS_module == "abstract-factory")
+    std::map<std::string, std::function<int()>> func_table =
     {
-        abstract_factory();
-    }
-    else if (FLAGS_module == "parse-yaml-config")
+        {"abstract-factory", abstract_factory},
+        {"parse-yaml-config", parse_yaml_config},
+        {"class-with-thread", class_with_thread},
+        {"class-delegating-constructor", class_delegating_constructor},
+        {"file-to-memory", file_to_memory},
+        {"list-files", list_files},
+        {"request-token", request_token},
+        {"httplib-request-token", httplib_request_token},
+        {"httplib-upload-file", httplib_upload_file},
+        {"httplib-push-record", httplib_push_record},
+        {"httplib-upload-file-and-push-record", httplib_upload_file_and_push_record},
+        {"get-year-month-day-hour-minute", get_year_month_day_hour_minute},
+        {"get-save-path", get_save_path},
+        {"http-server-with-mongoose", http_server_with_mongoose},
+        {"test-son-call-parent-func", test_son_call_parent_func},
+        {"decorator-sample", decorator_sample},
+        {"test-task-use-service", test_task_use_service},
+        {"token-and-push", token_and_push},
+        {"opencv-sample", opencv_sample},
+        {"curl-example", curl_example},
+        {"ffmpeg-record-video", ffmpeg_record_video},
+        {"test-master-camera-get-rgb", test_master_camera_get_rgb},
+        {"ffmpeg-record-to-jpg", ffmpeg_record_to_jpg},
+        {"robot-pose-compute", robot_pose_compute},
+        {"multi-images-to-video-in-opencv", multi_images_to_video_in_opencv}
+    };
+
+    auto it = func_table.find(FLAGS_module);
+    if (it != func_table.end())
     {
-        parse_yaml_config();
-    }
-    else if (FLAGS_module == "class-with-thread")
-    {
-        class_with_thread();
-    }
-    else if (FLAGS_module == "class-delegating-constructor")
-    {
-        class_delegating_constructor();
-    }
-    else if (FLAGS_module == "file-to-memory")
-    {
-        file_to_memory();
-    }
-    else if (FLAGS_module == "list-files")
-    {
-        list_files();
-    }
-    else if (FLAGS_module == "request-token")
-    {
-        request_token();
-    }
-    else if (FLAGS_module == "httplib-request-token")
-    {
-        httplib_request_token();
-    }
-    else if (FLAGS_module == "httplib-upload-file")
-    {
-        httplib_upload_file();
-    }
-    else if (FLAGS_module == "httplib-push-record")
-    {
-        httplib_push_record();
-    }
-    else if (FLAGS_module == "httplib-upload-file-and-push-record")
-    {
-        httplib_upload_file_and_push_record();
-    }
-    else if (FLAGS_module == "get-year-month-day-hour-minute")
-    {
-        get_year_month_day_hour_minute();
-    }
-    else if (FLAGS_module == "get-save-path")
-    {
-        get_save_path();
-    }
-    else if (FLAGS_module == "http-server-with-mongoose")
-    {
-        http_server_with_mongoose();
-    }
-    else if (FLAGS_module == "test-son-call-parent-func")
-    {
-        test_son_call_parent_func();
-    }
-    else if (FLAGS_module == "decorator-sample")
-    {
-        decorator_sample();
-    }
-    else if (FLAGS_module == "test-task-use-service")
-    {
-        test_task_use_service();
-    }
-    else if (FLAGS_module == "token-and-push")
-    {
-        token_and_push();
-    }
-    else if (FLAGS_module == "opencv-sample")
-    {
-        opencv_sample();
-    }
-    else if (FLAGS_module == "curl-example")
-    {
-        curl_example();
-    }
-    else if (FLAGS_module == "ffmpeg-record-video")
-    {
-        ffmpeg_record_video();
-    }
-    else if (FLAGS_module == "test-master-camera-get-rgb")
-    {
-        test_master_camera_get_rgb();
-    }
-    else if (FLAGS_module == "ffmpeg-record-to-jpg")
-    {
-        ffmpeg_record_to_jpg();
-    }
-    else if (FLAGS_module == "robot-pose-compute")
-    {
-        robot_pose_compute();
-    }
-    else if (FLAGS_module == "multi-images-to-video-in-opencv")
-    {
-        multi_images_to_video_in_opencv();
+        it->second();
     }
     else 
     {
-        LOG(ERROR) << "invalid module argument: " << FLAGS_module << "\n";
+        LOG(ERROR) << "invalid argument: " << FLAGS_module << "\n";
     }
 
     google::ShutDownCommandLineFlags();

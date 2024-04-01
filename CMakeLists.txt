@@ -76,20 +76,42 @@ else(CURL_FOUND)
 endif(CURL_FOUND)
 
 #
-aux_source_directory(${CMAKE_SOURCE_DIR}/src/ SRC_FILES)
-
-#
 aux_source_directory(${CMAKE_SOURCE_DIR}/third_party/mongoose/ MONGOOSE_SRC_FILES)
 
-add_executable(cpp_unit ${SRC_FILES} ${MONGOOSE_SRC_FILES})
+#
+aux_source_directory(${CMAKE_SOURCE_DIR}/any/ SRC_FILES)
 
-target_include_directories(cpp_unit PUBLIC ${Boost_INCLUDE_DIR} 
+add_executable(any_unit ${SRC_FILES} ${MONGOOSE_SRC_FILES})
+
+target_include_directories(any_unit PUBLIC ${Boost_INCLUDE_DIR} 
                                            ${CMAKE_SOURCE_DIR}/include/ 
                                            ${CMAKE_SOURCE_DIR}/third_party/ 
                                            ${OpenCV_INCLUDE_DIRS}
                           )
 
-target_link_libraries(cpp_unit glog::glog 
+target_link_libraries(any_unit glog::glog 
+                               gflags 
+                               yaml-cpp::yaml-cpp 
+                               Boost::filesystem 
+                               OpenSSL::SSL 
+                               OpenSSL::Crypto 
+                               PkgConfig::ffmpeg 
+                               ${OpenCV_LIBS}
+                               CURL::libcurl
+                     )
+
+#
+aux_source_directory(${CMAKE_SOURCE_DIR}/net/ NETWORK_SRC_FILES)
+
+add_executable(net_unit ${NETWORK_SRC_FILES} ${MONGOOSE_SRC_FILES})
+
+target_include_directories(net_unit PUBLIC ${Boost_INCLUDE_DIR} 
+                                           ${CMAKE_SOURCE_DIR}/include/ 
+                                           ${CMAKE_SOURCE_DIR}/third_party/ 
+                                           ${OpenCV_INCLUDE_DIRS}
+                          )
+
+target_link_libraries(net_unit glog::glog 
                                gflags 
                                yaml-cpp::yaml-cpp 
                                Boost::filesystem 
