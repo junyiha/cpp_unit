@@ -28,6 +28,24 @@ void InitGlog(const char *program_path)
     FLAGS_log_file_header = false;
 }
 
+// 函数用于进行 base64 解码
+unsigned char *base64_decode(const char *input, int length) {
+    BIO *bio, *b64;
+    unsigned char *buffer = (unsigned char *)malloc(length);
+    memset(buffer, 0, length);
+
+    b64 = BIO_new(BIO_f_base64());
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+    bio = BIO_new_mem_buf((void *)input, length);
+    bio = BIO_push(b64, bio);
+
+    BIO_read(bio, buffer, length);
+
+    BIO_free_all(bio);
+
+    return buffer;
+}
+
 int request_token()
 {
     namespace asio = boost::asio;
@@ -611,6 +629,34 @@ int input_id_and_get_video_file_with_httplib(Protocol::Message& message)
     return 0;
 }
 
+int get_base64_save_image(Protocol::Message& message)
+{
+    httplib::Client cli("http://192.169.5.63:8000");
+
+    std::string path = "/api/setting/warning_record/info";
+
+    nlohmann::json request_data;
+    request_data["id"] = message.id;
+
+    auto res = cli.Post(path, request_data.dump(), "Content-Type: application/json");
+    if (res)
+    {
+        nlohmann::json parsed_data = nlohmann::json::parse(res->body);
+        std::string img_str = parsed_data["image"];
+
+        auto buffer = base64_decode(img_str.data(), img_str.size());
+        std::ofstream output_file("/tmp/aba.jpg", std::ios::binary);
+        output_file.write(reinterpret_cast<char *>(buffer), img_str.size());
+        output_file.close();
+    }
+    else 
+    {
+        LOG(ERROR) << "request failed\n";
+    }
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 DEFINE_int32(id, 13322, "module layer");
 
@@ -638,7 +684,8 @@ int main(int argc, char* argv[])
 
     std::map<std::string, std::function<int(Protocol::Message&)>> func_with_argument_table = 
     {
-        {"input_id_and_get_video_file_with_httplib", input_id_and_get_video_file_with_httplib}
+        {"input_id_and_get_video_file_with_httplib", input_id_and_get_video_file_with_httplib},
+        {"get_base64_save_image", get_base64_save_image}
     };
 
     Protocol::Message message;

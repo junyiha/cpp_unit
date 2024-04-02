@@ -1547,6 +1547,143 @@ int thread_and_move()
     return 0;
 }
 
+int three_dimensionality_roi()
+{
+    std::vector<std::vector<double>> roi = 
+    {
+        {0, 0, 0},
+        {5, 5, 5},
+        {0, 5, 0},
+        {5, 0, 0},
+        {5, 5, 0},
+        {0, 0, 5},
+        {5, 0, 5},
+        {0, 5, 5}
+    };
+
+    std::vector<double> target1 = {1, 1, 1};
+    std::vector<double> target2 = {10, 10, 10};
+
+    std::vector<double> x_container;
+    std::vector<double> y_container;
+    std::vector<double> z_container;
+    
+    std::transform(roi.begin(), roi.end(), std::back_inserter(x_container), [](std::vector<double> tmp){ return tmp.at(0);});
+    std::transform(roi.begin(), roi.end(), std::back_inserter(y_container), [](std::vector<double> tmp){ return tmp.at(1);});
+    std::transform(roi.begin(), roi.end(), std::back_inserter(z_container), [](std::vector<double> tmp){ return tmp.at(2);});
+
+    std::sort(x_container.begin(), x_container.end());
+    std::sort(y_container.begin(), y_container.end());
+    std::sort(z_container.begin(), z_container.end());
+
+    LOG(INFO) << "max point(x,y,z): " << x_container.front() << ", " << y_container.front() << ", " << z_container.front() << "\n"
+              << "min point(x,y,z): " << x_container.back() << ", " << y_container.back() << ", " << z_container.back() << "\n";
+
+    if (target1.at(0) < x_container.back() && target1.at(0) > x_container.front() &&
+        target1.at(1) < y_container.back() && target1.at(1) > y_container.front() &&
+        target1.at(2) < z_container.back() && target1.at(2) > z_container.front()
+        )
+    {
+        LOG(INFO) << "the point: " << target1.at(0) << ", " << target1.at(1) << ", " << target1.at(2) << " is inside\n";
+    }
+    else 
+    {
+        LOG(ERROR) << "the point: " << target1.at(0) << ", " << target1.at(1) << ", " << target1.at(2) << " is not inside\n";
+    }
+
+    if (target2.at(0) < x_container.back() && target2.at(0) > x_container.front() &&
+        target2.at(1) < y_container.back() && target2.at(1) > y_container.front() &&
+        target2.at(2) < z_container.back() && target2.at(2) > z_container.front()
+        )
+    {
+        LOG(INFO) << "the point: " << target2.at(0) << ", " << target2.at(1) << ", " << target2.at(2) << " is inside\n";
+    }
+    else 
+    {
+        LOG(ERROR) << "the point: " << target2.at(0) << ", " << target2.at(1) << ", " << target2.at(2) << " is not inside\n";
+    }
+
+
+    return 0;
+}
+
+int test_nlohmann_json_double_array()
+{
+    std::string data{R"(
+{
+            "argument_static_catch_grap_area": [
+                [
+                    -0.15,
+                    -0.2,
+                    0
+                ],
+                [
+                    -0.15,
+                    -0.6,
+                    0
+                ],
+                [
+                    0.45,
+                    -0.2,
+                    0.1
+                ],
+                [
+                    0.45,
+                    -0.6,
+                    0.1
+                ]
+            ]
+}
+    )"};
+
+
+    nlohmann::json parsed_data = nlohmann::json::parse(data);
+    std::vector<std::vector<double>> area = parsed_data["argument_static_catch_grap_area"].get<std::vector<std::vector<double>>>();
+
+    for (auto& it : area)
+    {
+        LOG(INFO) << it.at(0) << ", " << it.at(1) << ", " << it.at(2) << "\n";
+    }
+
+    return 0;
+}
+
+int sort_compare_function()
+{
+    std::vector<double> data_container{3, 1, 4, 2, 6, 234, 546, 1};
+
+    LOG(INFO) << "初始的算法:\n";
+    std::sort(data_container.begin(), data_container.end());
+    for (auto& it : data_container)
+    {
+        LOG(INFO) << it << "\n";
+    }
+
+    LOG(INFO) << "大于号算法: \n";
+    std::sort(data_container.begin(), data_container.end(), [](double a, double b){ return a > b;});
+    for (auto& it : data_container)
+    {
+        LOG(INFO) << it << "\n";
+    }
+
+    LOG(INFO) << "小于号算法: \n";
+    std::sort(data_container.begin(), data_container.end(), [](double a, double b){ return a < b;});
+    for (auto& it : data_container)
+    {
+        LOG(INFO) << it << "\n";
+    }
+
+    LOG(INFO) << "反转算法: \n";
+    std::sort(data_container.begin(), data_container.end());
+    std::reverse(data_container.begin(), data_container.end());
+    for (auto& it : data_container)
+    {
+        LOG(INFO) << it << "\n";
+    }
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -1585,7 +1722,10 @@ int main(int argc, char* argv[])
         {"ffmpeg-record-to-jpg", ffmpeg_record_to_jpg},
         {"robot-pose-compute", robot_pose_compute},
         {"multi-images-to-video-in-opencv", multi_images_to_video_in_opencv},
-        {"thread-and-move", thread_and_move}
+        {"thread-and-move", thread_and_move},
+        {"three_dimensionality_roi", three_dimensionality_roi},
+        {"test_nlohmann_json_double_array", test_nlohmann_json_double_array},
+        {"sort_compare_function", sort_compare_function}
     };
 
     auto it = func_table.find(FLAGS_module);

@@ -18,6 +18,7 @@
 #include <sstream>
 #include <tuple>
 #include <unordered_map>
+#include <algorithm>
 
 #include "mongoose/mongoose.h"
 
