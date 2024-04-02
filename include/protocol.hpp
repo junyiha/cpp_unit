@@ -17,6 +17,10 @@
 
 namespace Protocol
 {
+    struct Message
+    {
+        int id;
+    };
 
 }  // namespace Protocol
 

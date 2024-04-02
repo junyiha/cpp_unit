@@ -1158,7 +1158,7 @@ int ffmpeg_record_video()
     int result;
     std::string rtsp_url{"rtsp://admin:abcd1234@192.169.8.153"};
     std::string output_file{"/tmp/output.mp4"};
-    int duration{60};
+    int duration{600};
 
     result = avformat_open_input(&p_format_ctx, rtsp_url.c_str(), nullptr, &options);
     if (result != 0)
@@ -1524,6 +1524,29 @@ int multi_images_to_video_in_opencv()
     return 0;
 }
 
+int thread_and_move()
+{
+    auto func = []()
+    {
+        for (int i = 0; i < 100; i++)
+        {
+            LOG(INFO) << "aaa message\n";
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+    };
+
+    std::thread thread1 = std::thread(func);
+
+    std::thread thread2 = std::move(thread1);
+
+    if (thread2.joinable())
+    {
+        thread2.join();
+    }
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -1561,7 +1584,8 @@ int main(int argc, char* argv[])
         {"test-master-camera-get-rgb", test_master_camera_get_rgb},
         {"ffmpeg-record-to-jpg", ffmpeg_record_to_jpg},
         {"robot-pose-compute", robot_pose_compute},
-        {"multi-images-to-video-in-opencv", multi_images_to_video_in_opencv}
+        {"multi-images-to-video-in-opencv", multi_images_to_video_in_opencv},
+        {"thread-and-move", thread_and_move}
     };
 
     auto it = func_table.find(FLAGS_module);

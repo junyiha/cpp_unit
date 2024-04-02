@@ -1,3 +1,13 @@
+/**
+ * @file network.cpp
+ * @author your name (you@domain.com)
+ * @brief 
+ * @version 0.1
+ * @date 2024-04-01
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
 #include "protocol.hpp"
 
 void InitGlog(const char *program_path)
@@ -560,7 +570,49 @@ int curl_example()
     return 0;
 }
 
+int get_video_file_with_httplib()
+{
+    httplib::Client cli("http://127.0.0.1:8000");
+
+    auto res = cli.Get("/api/setting/warning_record/view?id=11334");
+    if (res)
+    {
+        std::ofstream output_file("/tmp/bbb.avi", std::ios::binary);
+        output_file.write(res->body.data(), res->body.size());
+        output_file.close();
+    }
+    else 
+    {
+        LOG(ERROR) << "request failed\n";
+    }
+
+    return 0;
+}
+
+int input_id_and_get_video_file_with_httplib(Protocol::Message& message)
+{
+    httplib::Client cli("http://127.0.0.1:8000");
+
+    std::string path = "/api/setting/warning_record/view?id=";
+    path += std::to_string(message.id);
+
+    auto res = cli.Get(path);
+    if (res)
+    {
+        std::ofstream output_file("/tmp/bbb.avi", std::ios::binary);
+        output_file.write(res->body.data(), res->body.size());
+        output_file.close();
+    }
+    else 
+    {
+        LOG(ERROR) << "request failed\n";
+    }
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
+DEFINE_int32(id, 13322, "module layer");
 
 int main(int argc, char* argv[])
 {
@@ -580,17 +632,31 @@ int main(int argc, char* argv[])
         {"httplib-upload-file-and-push-record", httplib_upload_file_and_push_record},
         {"http-server-with-mongoose", http_server_with_mongoose},
         {"token-and-push", token_and_push},
-        {"curl-example", curl_example}
+        {"curl-example", curl_example},
+        {"get-video-file-with-httplib", get_video_file_with_httplib}
     };
+
+    std::map<std::string, std::function<int(Protocol::Message&)>> func_with_argument_table = 
+    {
+        {"input_id_and_get_video_file_with_httplib", input_id_and_get_video_file_with_httplib}
+    };
+
+    Protocol::Message message;
+
+    message.id = FLAGS_id;
 
     auto it = func_table.find(FLAGS_module);
     if (it != func_table.end())
     {
+        LOG(INFO) << "function: " << it->first << "\n";
         it->second();
     }
-    else 
+
+    auto tmp_it = func_with_argument_table.find(FLAGS_module);
+    if (tmp_it != func_with_argument_table.end())
     {
-        LOG(ERROR) << "invalid argument: " << FLAGS_module << "\n";
+        LOG(INFO) << "function: " << tmp_it->first << "\n";
+        tmp_it->second(message);
     }
 
     google::ShutDownCommandLineFlags();
