@@ -1684,6 +1684,58 @@ int sort_compare_function()
     return 0;
 }
 
+int video_to_image_with_opencv()
+{
+    const std::string video_file{"/data/static/warning_pictures/p8H2e-frame-6222.avi"};
+    const std::string output_video_file{"/tmp/aaa.avi"};
+
+    cv::VideoCapture cap(video_file);
+    if (!cap.isOpened())
+    {
+        LOG(ERROR) << "error opening video file\n";
+        return -1;
+    }
+
+    std::vector<cv::Mat> image_container;
+    int height, width;
+    while (true)
+    {
+        cv::Mat frame;
+        cap >> frame;
+        if (frame.empty())
+        {
+            break;
+        }
+        height = frame.rows;
+        width = frame.cols;
+        image_container.push_back(frame);
+    }
+
+    cv::VideoWriter video_writer(output_video_file, cv::VideoWriter::fourcc('M','J','P','G'), 2, cv::Size(width, height));
+    if (!video_writer.isOpened())
+    {
+        LOG(ERROR) << "could not open the output video file for writing\n";
+        return -1;
+    }
+
+    // 定义要添加的文本内容以及其他绘制参数
+    std::string text = "leave job event, leave time: 60(s)";
+    cv::Point org(700, 50); // 文本的起始位置
+    int fontFace = cv::FONT_HERSHEY_SIMPLEX; // 字体类型
+    double fontScale = 1.0; // 字体缩放系数
+    cv::Scalar color(0, 0, 255); // 文本颜色
+    int thickness = 2; // 文本粗细
+
+    for (auto& it : image_container)
+    {
+        cv::putText(it, text, org, fontFace, fontScale, color, thickness);
+        video_writer.write(it);
+    }
+    LOG(INFO) << "video has been successfully create and saved as: " << output_video_file << "\n";
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -1725,7 +1777,8 @@ int main(int argc, char* argv[])
         {"thread-and-move", thread_and_move},
         {"three_dimensionality_roi", three_dimensionality_roi},
         {"test_nlohmann_json_double_array", test_nlohmann_json_double_array},
-        {"sort_compare_function", sort_compare_function}
+        {"sort_compare_function", sort_compare_function},
+        {"video_to_image_with_opencv", video_to_image_with_opencv}
     };
 
     auto it = func_table.find(FLAGS_module);
