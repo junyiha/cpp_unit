@@ -47,6 +47,7 @@ extern "C"
 }
 
 #include "opencv4/opencv2/opencv.hpp"
+#include "opencv4/opencv2/dnn.hpp"
 
 #include "curl/curl.h"
 

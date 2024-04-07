@@ -145,6 +145,28 @@ target_link_libraries(ffmpeg_unit glog::glog
                      )
 
 
+#
+aux_source_directory(${CMAKE_SOURCE_DIR}/opencv/ OPENCV_SRC_FILES)
+
+add_executable(opencv_unit ${OPENCV_SRC_FILES} ${MONGOOSE_SRC_FILES})
+
+target_include_directories(opencv_unit PUBLIC ${Boost_INCLUDE_DIR} 
+                                              ${CMAKE_SOURCE_DIR}/include/ 
+                                              ${CMAKE_SOURCE_DIR}/third_party/ 
+                                              ${OpenCV_INCLUDE_DIRS}
+                          )
+
+target_link_libraries(opencv_unit glog::glog 
+                                  gflags 
+                                  yaml-cpp::yaml-cpp 
+                                  Boost::filesystem 
+                                  OpenSSL::SSL 
+                                  OpenSSL::Crypto 
+                                  PkgConfig::ffmpeg 
+                                  ${OpenCV_LIBS}
+                                  CURL::libcurl
+                     )
+
 get_target_property(TARGET_SOURCES ffmpeg_unit SOURCES)
 message(STATUS "ffmpeg target sources: ${TARGET_SOURCES}")
 

@@ -130,6 +130,8 @@ int ffmpeg_rtsp_to_image(Protocol::Message& message)
     AVPacket packet;
     cv::Mat image;
     int cv_linesize[1];
+    int count{0};
+    std::string save_path;
     AVCodecContext* codec_context_ptr{nullptr};
     AVFrame* frame_ptr = av_frame_alloc();
     AVFrame* frame_rgb_ptr{nullptr};
@@ -212,6 +214,11 @@ int ffmpeg_rtsp_to_image(Protocol::Message& message)
         cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
         cv::imshow("test", image);
         cv::waitKey(10);
+        save_path = "/tmp/image-";
+        save_path += std::to_string(count);
+        save_path += ".jpg";
+        cv::imwrite(save_path, image);
+        count++;
 
         av_packet_unref(&packet);
     }
