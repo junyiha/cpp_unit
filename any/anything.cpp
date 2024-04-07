@@ -1686,7 +1686,7 @@ int sort_compare_function()
 
 int video_to_image_with_opencv()
 {
-    const std::string video_file{"/data/static/warning_pictures/p8H2e-frame-6222.avi"};
+    const std::string video_file{"/tmp/p8H2e-frame-309973.avi"};
     const std::string output_video_file{"/tmp/aaa.avi"};
 
     cv::VideoCapture cap(video_file);
@@ -1711,7 +1711,14 @@ int video_to_image_with_opencv()
         image_container.push_back(frame);
     }
 
-    cv::VideoWriter video_writer(output_video_file, cv::VideoWriter::fourcc('M','J','P','G'), 2, cv::Size(width, height));
+    height *= 0.5;
+    width *= 0.5;
+    for (auto& it : image_container)
+    {
+        cv::resize(it, it, cv::Size(width, height));
+    }
+
+    cv::VideoWriter video_writer(output_video_file, cv::VideoWriter::fourcc('M','J','P','G'), 1, cv::Size(width, height));
     if (!video_writer.isOpened())
     {
         LOG(ERROR) << "could not open the output video file for writing\n";
@@ -1719,16 +1726,18 @@ int video_to_image_with_opencv()
     }
 
     // 定义要添加的文本内容以及其他绘制参数
-    std::string text = "leave job event, leave time: 60(s)";
-    cv::Point org(700, 50); // 文本的起始位置
+    std::string text = "hhhleave job event, leave time: 60(s)";
+    cv::Point org(350, 25); // 文本的起始位置
     int fontFace = cv::FONT_HERSHEY_SIMPLEX; // 字体类型
-    double fontScale = 1.0; // 字体缩放系数
+    double fontScale = 0.5; // 字体缩放系数
     cv::Scalar color(0, 0, 255); // 文本颜色
     int thickness = 2; // 文本粗细
 
     for (auto& it : image_container)
     {
         cv::putText(it, text, org, fontFace, fontScale, color, thickness);
+        cv::imshow("aaa", it);
+        cv::waitKey(0);
         video_writer.write(it);
     }
     LOG(INFO) << "video has been successfully create and saved as: " << output_video_file << "\n";
