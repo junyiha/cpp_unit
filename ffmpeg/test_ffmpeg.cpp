@@ -234,6 +234,201 @@ __RETURN_DATA:
     return 0;
 }
 
+int ffmpeg_images_to_video(Protocol::Message& message)
+{
+    std::string image_dir{"/data/home/user/workspace/cpp_unit/data/images"};
+    std::vector<std::string> image_path_container;
+
+    try 
+    {
+        if (boost::filesystem::exists(image_dir) && boost::filesystem::is_directory(image_dir))
+        {
+            for (const auto& entry : boost::filesystem::directory_iterator(image_dir))
+            {
+                if (boost::filesystem::is_regular_file(entry.status()))
+                {
+                    image_path_container.push_back(entry.path().string());
+                }
+            }
+        }
+    }
+    catch (const boost::filesystem::filesystem_error& e)
+    {
+        LOG(ERROR) << e.what() << "\n";
+    }
+
+    std::sort(image_path_container.begin(), image_path_container.end(), [](std::string a, std::string b){
+        auto a_pos_1 = a.find_first_of('-');
+        auto a_pos_2 = a.find_first_of('.');
+        auto a_index = std::stoi(a.substr(a_pos_1 + 1, a_pos_2 - a_pos_1 - 1));
+
+        auto b_pos_1 = b.find_first_of('-');
+        auto b_pos_2 = b.find_first_of('.');
+        auto b_index = std::stoi(b.substr(b_pos_1 + 1, b_pos_2 - b_pos_1 - 1));
+
+        return a_index < b_index;
+    });
+
+    for (auto& it : image_path_container)
+    {
+        LOG(INFO) << "file: " << it << "\n";
+    }
+
+    int res{-1};
+    int width = 640;
+    int height = 360;
+    int bit_rate = 4000;
+    int frame_rate = 20;
+    std::string output_filename{"/tmp/aaa.mp4"};
+    int frame_count{0};
+    AVPacket* packet_ptr;
+    AVCodec* codec_ptr{nullptr};
+    AVCodecContext* codec_context_ptr{nullptr};
+    AVStream* stream_ptr{nullptr};
+    AVFrame* frame_ptr{nullptr};
+    AVFrame* av_frame_ptr{nullptr};
+    SwsContext* sws_context_ptr{nullptr};
+    AVFormatContext* format_context_ptr{nullptr};
+
+    avformat_alloc_output_context2(&format_context_ptr, nullptr, nullptr, output_filename.c_str());
+    if (!format_context_ptr)
+    {
+        LOG(ERROR) << "could not allocate output context\n";
+        goto __RETURN_DATA;
+    }
+
+    codec_ptr = const_cast<AVCodec *>(avcodec_find_encoder(AV_CODEC_ID_MPEG4));
+    if (!codec_ptr)
+    {
+        LOG(ERROR) << "codec not found\n";
+        goto __RETURN_DATA;
+    }
+
+    stream_ptr = avformat_new_stream(format_context_ptr, codec_ptr);
+    if (!stream_ptr)
+    {
+        LOG(ERROR) << "could not allocate stream\n";
+        goto __RETURN_DATA;
+    }
+
+    codec_context_ptr = avcodec_alloc_context3(codec_ptr);
+    if (!codec_context_ptr)
+    {
+        LOG(ERROR) << "could not allocate codec context\n";
+        goto __RETURN_DATA;
+    }
+
+    stream_ptr->codecpar->codec_id = codec_ptr->id;
+    stream_ptr->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+    stream_ptr->codecpar->width = width;
+    stream_ptr->codecpar->height = height;
+    stream_ptr->codecpar->format = AV_PIX_FMT_YUV420P;
+    stream_ptr->codecpar->bit_rate = bit_rate;
+
+    avcodec_parameters_to_context(codec_context_ptr, stream_ptr->codecpar);
+    codec_context_ptr->time_base = (AVRational){1, frame_rate};
+
+    res = avcodec_open2(codec_context_ptr, codec_ptr, nullptr);
+    if (res < 0)
+    {
+        LOG(ERROR) << "could not open codec\n";
+        goto __RETURN_DATA;
+    }
+
+    if (!(format_context_ptr->oformat->flags & AVFMT_NOFILE))
+    {
+        res = avio_open(&format_context_ptr->pb, output_filename.c_str(), AVIO_FLAG_WRITE);
+        if (res < 0)
+        {
+            LOG(ERROR) << "could not open output file\n";
+            goto __RETURN_DATA;
+        }
+    }
+
+    res = avformat_write_header(format_context_ptr, nullptr);
+    if (res < 0)
+    {
+        LOG(ERROR) << "could not write header\n";
+        goto __RETURN_DATA;
+    }
+
+    frame_ptr = av_frame_alloc();
+    if (!frame_ptr)
+    {
+        LOG(ERROR) << "could not allocate video frame\n";
+        goto __RETURN_DATA;
+    }
+
+    frame_ptr->format = codec_context_ptr->pix_fmt;
+    frame_ptr->width = codec_context_ptr->width;
+    frame_ptr->height = codec_context_ptr->height;
+
+    res = av_frame_get_buffer(frame_ptr, 32);
+    if (res < 0)
+    {
+        LOG(ERROR) << "could not allocate the video frame data\n";
+        goto __RETURN_DATA;
+    }
+
+    for (auto& it : image_path_container)
+    {
+        cv::Mat image = cv::imread(it);
+        if (image.empty())
+        {
+            break;
+        }
+
+        cv::resize(image, image, cv::Size(width, height));
+        av_frame_ptr = av_frame_alloc();
+        av_frame_ptr->width = image.cols;
+        av_frame_ptr->height = image.rows;
+        av_frame_ptr->format = AV_PIX_FMT_BGR24;
+
+        av_frame_get_buffer(av_frame_ptr, 32);
+        av_image_fill_arrays(av_frame_ptr->data, av_frame_ptr->linesize, image.data, AV_PIX_FMT_BGR24, image.cols, image.rows, 1);
+
+        sws_context_ptr = sws_getContext(image.cols, image.rows, AV_PIX_FMT_BGR24, codec_context_ptr->width, codec_context_ptr->height, codec_context_ptr->pix_fmt, SWS_BILINEAR, nullptr, nullptr, nullptr);
+
+        sws_scale(sws_context_ptr, av_frame_ptr->data, av_frame_ptr->linesize, 0, image.rows, frame_ptr->data, frame_ptr->linesize);
+        
+        av_frame_free(&av_frame_ptr);
+        sws_freeContext(sws_context_ptr);
+
+        frame_ptr->pts = frame_count++;
+        packet_ptr = av_packet_alloc();
+        
+        res = avcodec_send_frame(codec_context_ptr, frame_ptr);
+        if (res < 0)
+        {
+            LOG(ERROR) << "encoding frame failed\n";
+            goto __RETURN_DATA;
+        }
+
+        res = avcodec_receive_packet(codec_context_ptr, packet_ptr);
+        if (res < 0)
+        {
+            LOG(ERROR) << "encoding frame failed\n";
+            goto __RETURN_DATA;
+        }
+
+        packet_ptr->stream_index = stream_ptr->index;
+        av_packet_rescale_ts(packet_ptr, codec_context_ptr->time_base, stream_ptr->time_base);
+        packet_ptr->pos = -1;
+
+        av_interleaved_write_frame(format_context_ptr, packet_ptr);
+        // av_packet_unref(packet_ptr);
+        av_packet_free(&packet_ptr);
+    }
+    av_write_trailer(format_context_ptr);
+
+    __RETURN_DATA:
+        avio_close(format_context_ptr->pb);
+        avformat_free_context(format_context_ptr);
+        av_frame_free(&frame_ptr);
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 DEFINE_int64(id, 123, "module layer");
 
@@ -251,7 +446,8 @@ int main(int argc, char* argv[])
     std::map<std::string, std::function<int(Protocol::Message&)>> func_table =
     {
         {"ffmpeg_record_video", ffmpeg_record_video},
-        {"ffmpeg_rtsp_to_image", ffmpeg_rtsp_to_image}
+        {"ffmpeg_rtsp_to_image", ffmpeg_rtsp_to_image},
+        {"ffmpeg_images_to_video", ffmpeg_images_to_video}
     };
 
     auto it = func_table.find(FLAGS_module);
