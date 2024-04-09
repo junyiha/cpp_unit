@@ -416,15 +416,14 @@ int ffmpeg_images_to_video(Protocol::Message& message)
         packet_ptr->pos = -1;
 
         av_interleaved_write_frame(format_context_ptr, packet_ptr);
-        // av_packet_unref(packet_ptr);
         av_packet_free(&packet_ptr);
     }
     av_write_trailer(format_context_ptr);
 
-    __RETURN_DATA:
-        avio_close(format_context_ptr->pb);
-        avformat_free_context(format_context_ptr);
-        av_frame_free(&frame_ptr);
+__RETURN_DATA:
+    avio_close(format_context_ptr->pb);
+    avformat_free_context(format_context_ptr);
+    av_frame_free(&frame_ptr);
 
     return 0;
 }

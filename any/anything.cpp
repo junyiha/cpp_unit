@@ -1469,8 +1469,8 @@ int robot_pose_compute()
 
 int multi_images_to_video_in_opencv()
 {
-    const std::string dir{"/data/static/warning_pictures/"};
-    const std::string output_video_file{"/data/static/warning_pictures/leave_job.avi"};
+    const std::string dir{"/data/home/user/workspace/cpp_unit/data/images/"};
+    const std::string output_video_file{"/tmp/bbb.mp4"};
     std::vector<std::string> image_path_container;
 
     try
@@ -1507,7 +1507,7 @@ int multi_images_to_video_in_opencv()
         width = tmp_img.cols;
     }
 
-    cv::VideoWriter video_writer(output_video_file, cv::VideoWriter::fourcc('M','J','P','G'), 2, cv::Size(width, height));
+    cv::VideoWriter video_writer(output_video_file, cv::VideoWriter::fourcc('m','p','4','v'), 2, cv::Size(width, height));
     if (!video_writer.isOpened())
     {
         LOG(ERROR) << "could not open the output video file for writing\n";
