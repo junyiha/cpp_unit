@@ -297,7 +297,7 @@ int ffmpeg_images_to_video(Protocol::Message& message)
         goto __RETURN_DATA;
     }
 
-    codec_ptr = const_cast<AVCodec *>(avcodec_find_encoder(AV_CODEC_ID_MPEG4));
+    codec_ptr = const_cast<AVCodec *>(avcodec_find_encoder(AV_CODEC_ID_H264));
     if (!codec_ptr)
     {
         LOG(ERROR) << "codec not found\n";
@@ -428,6 +428,85 @@ __RETURN_DATA:
     return 0;
 }
 
+int ffmpeg_images_to_video_in_command(Protocol::Message& message)
+{
+    std::string image_dir{"/data/home/user/workspace/cpp_unit/data/images"};
+    std::vector<std::string> image_path_container;
+
+    try 
+    {
+        if (boost::filesystem::exists(image_dir) && boost::filesystem::is_directory(image_dir))
+        {
+            for (const auto& entry : boost::filesystem::directory_iterator(image_dir))
+            {
+                if (boost::filesystem::is_regular_file(entry.status()))
+                {
+                    image_path_container.push_back(entry.path().string());
+                }
+            }
+        }
+    }
+    catch (const boost::filesystem::filesystem_error& e)
+    {
+        LOG(ERROR) << e.what() << "\n";
+    }
+
+    std::sort(image_path_container.begin(), image_path_container.end(), [](std::string a, std::string b){
+        auto a_pos_1 = a.find_first_of('-');
+        auto a_pos_2 = a.find_first_of('.');
+        auto a_index = std::stoi(a.substr(a_pos_1 + 1, a_pos_2 - a_pos_1 - 1));
+
+        auto b_pos_1 = b.find_first_of('-');
+        auto b_pos_2 = b.find_first_of('.');
+        auto b_index = std::stoi(b.substr(b_pos_1 + 1, b_pos_2 - b_pos_1 - 1));
+
+        return a_index < b_index;
+    });
+
+    std::vector<cv::Mat> img_container;
+    for (auto& it : image_path_container)
+    {
+        LOG(INFO) << "file: " << it << "\n";
+        cv::Mat tmp = cv::imread(it);
+        if (tmp.empty())
+        {
+            continue;
+        }
+        img_container.push_back(tmp);
+    }
+    char *path;
+    char name[] = "/tmp/dirXXXXXX";
+    path = mkdtemp(name);
+    if (path == NULL)
+    {
+        perror("mkdtemp");
+        return -1;
+    }
+
+    LOG(INFO) << path << "\n";
+    std::vector<std::string> temporary_file_container;
+    for (int i = 0; i < img_container.size(); i++)
+    {
+        std::string file_name = std::string(path) + "/" + std::to_string(i) + ".jpg";
+        cv::imwrite(file_name, img_container.at(i));
+        temporary_file_container.push_back(file_name);
+    }
+
+    int frame_rate{2};
+    std::stringstream os_command;
+    os_command << ". /data/home/user/workspace/cpp_unit/build/source.sh && /data/usr/local/ffmpeg/bin/ffmpeg -framerate " << frame_rate << " -i " << path << "/%d.jpg " << "-c:v libx264 /tmp/output.mp4 -y";
+    system(os_command.str().c_str());
+    LOG(INFO) << "ffmpeg command: " << os_command.str() << "\n";
+
+    for (auto& it : temporary_file_container)
+    {
+        remove(it.c_str());
+    }
+
+    rmdir(path);
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 DEFINE_int64(id, 123, "module layer");
 
@@ -446,7 +525,8 @@ int main(int argc, char* argv[])
     {
         {"ffmpeg_record_video", ffmpeg_record_video},
         {"ffmpeg_rtsp_to_image", ffmpeg_rtsp_to_image},
-        {"ffmpeg_images_to_video", ffmpeg_images_to_video}
+        {"ffmpeg_images_to_video", ffmpeg_images_to_video},
+        {"ffmpeg_images_to_video_in_command", ffmpeg_images_to_video_in_command}
     };
 
     auto it = func_table.find(FLAGS_module);

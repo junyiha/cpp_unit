@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Player</title>
+</head>
+<body>
+    <video id="myVideo" width="640" height="360" controls>
+        <source src="/home/user/zjy-190/Documents/rk_1126/rk_release/static/warning_pictures/p8H2e-frame-860.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <script>
+        // 获取video元素
+        var video = document.getElementById("myVideo");
+
+        // 播放视频
+        video.play();
+    </script>
+
+    <button onclick="sendPostRequest()">发送GET请求</button>
+
+
+    <script>
+        function sendPostRequest() {
+          // 创建一个新的 XMLHttpRequest 对象
+          var xhr = new XMLHttpRequest();
+        
+          // 指定请求的类型和URL，这里假设你的服务器端接收 POST 请求的 URL 是 http://example.com/api/post
+          xhr.open('POST', 'http://192.169.5.63:8000/api/setting/warning_record/list', true);
+        
+          // 设置请求头，告诉服务器发送的数据类型是 JSON 格式
+          xhr.setRequestHeader('Content-Type', 'application/json');
+        
+          // 当请求完成时执行这个函数
+          xhr.onload = function () {
+            // 如果请求成功
+            if (xhr.status >= 200 && xhr.status < 300) {
+              // 在这里处理返回的数据
+              console.log('请求成功：', xhr.responseText);
+            } else {
+              // 如果请求失败
+              console.log('请求失败：', xhr.statusText);
+            }
+          };
+        
+          // 当请求出错时执行这个函数
+          xhr.onerror = function () {
+            console.log('请求出错');
+          };
+        
+          // 准备要发送的数据，这里假设要发送的数据是一个 JSON 对象
+          var data = {
+            'page':1,'page_size':10,'event_id':0,'time':[],'start_time':null,'end_time':null
+          };
+        
+          // 将 JSON 对象转换为字符串，并发送请求
+          xhr.send(JSON.stringify(data));
+        }
+    </script>
+</body>
+</html>

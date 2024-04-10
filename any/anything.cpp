@@ -1745,6 +1745,23 @@ int video_to_image_with_opencv()
     return 0;
 }
 
+int mkdtemp_command()
+{
+    char *path;
+    char name[] = "/tmp/dirXXXXXX";
+    path = mkdtemp(name);
+    if (path == NULL)
+    {
+        perror("mkdtemp");
+        return -1;
+    }
+
+    LOG(INFO) << path << "\n";
+    rmdir(path);
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -1787,7 +1804,8 @@ int main(int argc, char* argv[])
         {"three_dimensionality_roi", three_dimensionality_roi},
         {"test_nlohmann_json_double_array", test_nlohmann_json_double_array},
         {"sort_compare_function", sort_compare_function},
-        {"video_to_image_with_opencv", video_to_image_with_opencv}
+        {"video_to_image_with_opencv", video_to_image_with_opencv},
+        {"mkdtemp_command", mkdtemp_command}
     };
 
     auto it = func_table.find(FLAGS_module);
