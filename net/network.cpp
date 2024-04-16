@@ -657,6 +657,96 @@ int get_base64_save_image(Protocol::Message& message)
     return 0;
 }
 
+int mongoose_minimal_static_server(Protocol::Message& message)
+{
+    class EventDispatcher
+    {
+
+    private:
+        void Dispather(struct mg_connection* c, int ev, struct mg_http_message* hm)
+        {
+            if (mg_http_match_uri(hm, "/"))
+            {
+                StaticServer(c, ev, hm);
+            }
+            else if (mg_http_match_uri(hm, "/api/hello"))
+            {
+                mg_http_reply(c, 200, "Content-Type: text/plain\r\n", "Hello, %s\n", "world");
+            }
+            else if (mg_http_match_uri(hm, "/api/image"))
+            {
+                Image(c, ev, hm);
+            }
+            else if (mg_http_match_uri(hm, "/api/video"))
+            {
+                Video(c, ev, hm);
+            }
+            else 
+            {
+                mg_http_reply(c, 404, "Content-Type: text/plain\r\n", "uri not found");
+            }
+        }
+
+        void StaticServer(struct mg_connection* c, int ev, struct mg_http_message* hm)
+        {
+            struct mg_http_serve_opts opts = {.root_dir = "/tmp"};
+            mg_http_serve_dir(c, hm, &opts);
+        }
+
+        void Image(struct mg_connection* c, int ev, struct mg_http_message* hm)
+        {
+            const std::string path{"/home/user/Pictures/wallhaven-4dqdrm_1920x1080.png"};
+
+            struct mg_str data;
+            data.ptr = mg_file_read(&mg_fs_posix, path.c_str(), &(data.len));
+            mg_printf(c, "%s", "HTTP/1.0 200 OK\r\nCache-Control: no-cache\r\nParagma: no-cache\r\nExpires: Thu, 01 Dec 1994 16:00:00 GMT\r\nContent-Type: multipart/x-mixed-replace; boundary=--foo\r\n\r\n");
+            mg_printf(c, "--foo\r\nContent-Type: image/png\r\nContent-Length: %lu\r\n\r\n", data.len);
+            mg_send(c, data.ptr, data.len);
+            mg_send(c, "\r\n", 2);
+            c->is_draining = 1;
+            free((void*)data.ptr);
+        }
+
+        void Video(struct mg_connection* c, int ev, struct mg_http_message* hm)
+        {
+            const std::string path{"/home/user/Videos/rk-aaa.mp4"};
+            struct mg_str data;
+            data.ptr = mg_file_read(&mg_fs_posix, path.c_str(), &(data.len));
+            mg_printf(c, "%s", "HTTP/1.0 200 OK\r\nCache-Control: no-cache\r\nParagma: no-cache\r\nExpires: Thu, 01 Dec 1994 16:00:00 GMT\r\nContent-Type: multipart/x-mixed-replace; boundary=--foo\r\n\r\n");
+            mg_printf(c, "--foo\r\nContent-Type: video/mpeg4\r\nContent-Length: %lu\r\n\r\n", data.len);
+            mg_send(c, data.ptr, data.len);
+            mg_send(c, "\r\n", 2);
+            c->is_draining = 1;
+            free((void*)data.ptr);
+        }
+
+    public:
+        static void EventHandler (struct mg_connection* c, int ev, void* ev_data, void* fn_data)
+        {
+            if (ev == MG_EV_HTTP_MSG)
+            {
+                EventDispatcher* event_dispather_ptr = static_cast<EventDispatcher *>(fn_data);
+                event_dispather_ptr->Dispather(c, ev, (struct mg_http_message *)ev_data);
+            }
+        };
+    };
+    
+    EventDispatcher event_dispatcher;
+    struct mg_mgr mgr;
+    mg_mgr_init(&mgr);
+
+    mg_http_listen(&mgr, "http://localhost:8001", (mg_event_handler_t)EventDispatcher::EventHandler, std::addressof(event_dispatcher));
+
+    for (;;)
+    {
+        mg_mgr_poll(&mgr, 1000);
+    }
+
+    mg_mgr_free(&mgr);
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 DEFINE_int32(id, 13322, "module layer");
 
@@ -685,7 +775,8 @@ int main(int argc, char* argv[])
     std::map<std::string, std::function<int(Protocol::Message&)>> func_with_argument_table = 
     {
         {"input_id_and_get_video_file_with_httplib", input_id_and_get_video_file_with_httplib},
-        {"get_base64_save_image", get_base64_save_image}
+        {"get_base64_save_image", get_base64_save_image},
+        {"mongoose_minimal_static_server", mongoose_minimal_static_server}
     };
 
     Protocol::Message message;
