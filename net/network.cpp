@@ -681,6 +681,14 @@ int mongoose_minimal_static_server(Protocol::Message& message)
             {
                 Video(c, ev, hm);
             }
+            else if (mg_http_match_uri(hm, "/api/file"))
+            {
+                File(c, ev, hm);
+            }
+            else if (mg_http_match_uri(hm, "/api/zipFile"))
+            {
+                ZipFile(c, ev, hm);
+            }
             else 
             {
                 mg_http_reply(c, 404, "Content-Type: text/plain\r\n", "uri not found");
@@ -709,13 +717,41 @@ int mongoose_minimal_static_server(Protocol::Message& message)
 
         void Video(struct mg_connection* c, int ev, struct mg_http_message* hm)
         {
-            const std::string path{"/home/user/Videos/rk-aaa.mp4"};
+            const std::string path{"/home/user/Pictures/view"};
             struct mg_str data;
             data.ptr = mg_file_read(&mg_fs_posix, path.c_str(), &(data.len));
-            mg_printf(c, "%s", "HTTP/1.0 200 OK\r\nCache-Control: no-cache\r\nParagma: no-cache\r\nExpires: Thu, 01 Dec 1994 16:00:00 GMT\r\nContent-Type: multipart/x-mixed-replace; boundary=--foo\r\n\r\n");
-            mg_printf(c, "--foo\r\nContent-Type: video/mpeg4\r\nContent-Length: %lu\r\n\r\n", data.len);
+            mg_printf(c, "%s", "HTTP/1.0 200 OK\r\nTransfer-Encoding:chunked\r\n\r\n");
+            mg_http_write_chunk(c, data.ptr, data.len);
+            mg_send(c, "", 0);
+            LOG(INFO) << "data.len: " << data.len << "\n";
+            c->is_draining = 1;
+            free((void*)data.ptr);
+        }
+
+        void File(struct mg_connection* c, int ev, struct mg_http_message* hm)
+        {
+            const std::string path{"/home/user/Downloads/张俊意的体检报告.pdf"};
+            struct mg_str data;
+            data.ptr = mg_file_read(&mg_fs_posix, path.c_str(), &(data.len));
+            mg_printf(c, "%s", "HTTP/1.0 200 OK\r\nCache-Control: no-cache\r\nParagma: no-cache\r\nExpires: Thu, 01 Dec 1994 16:00:00 GMT\r\nContent-Type: application/pdf\r\n\r\n");
+            mg_printf(c, "Content-Length: %lu\r\n\r\n", data.len);
             mg_send(c, data.ptr, data.len);
             mg_send(c, "\r\n", 2);
+            LOG(INFO) << "data.len: " << data.len << "\n";
+            c->is_draining = 1;
+            free((void*)data.ptr);
+        }
+
+        void ZipFile(struct mg_connection* c, int ev, struct mg_http_message* hm)
+        {
+            const std::string path{"/home/user/Downloads/dist.zip"};
+            struct mg_str data;
+            data.ptr = mg_file_read(&mg_fs_posix, path.c_str(), &(data.len));
+            mg_printf(c, "%s", "HTTP/1.0 200 OK\r\nCache-Control: no-cache\r\nParagma: no-cache\r\nExpires: Thu, 01 Dec 1994 16:00:00 GMT\r\nContent-Type: application/octet-stream\r\n\r\n");
+            mg_printf(c, "Content-Length: %lu\r\n\r\n", data.len);
+            mg_send(c, data.ptr, data.len);
+            mg_send(c, "\r\n", 2);
+            LOG(INFO) << "data.len: " << data.len << "\n";
             c->is_draining = 1;
             free((void*)data.ptr);
         }
