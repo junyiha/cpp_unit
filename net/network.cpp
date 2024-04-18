@@ -9,6 +9,7 @@
  * 
  */
 #include "protocol.hpp"
+#include "zmq.hpp"
 
 void InitGlog(const char *program_path)
 {
@@ -783,6 +784,50 @@ int mongoose_minimal_static_server(Protocol::Message& message)
     return 0;
 }
 
+int test_zmq_producer(Protocol::Message& message)
+{
+    zmq::context_t context(1);
+    zmq::socket_t publisher(context, ZMQ_PUB);
+    
+    publisher.bind("tcp://*:5556");
+
+    std::string msg{"Hello, ZeroMQ!"};
+    while (true)
+    {
+        publisher.send(zmq::buffer(msg), zmq::send_flags::none);
+        LOG(INFO) << "Send: " << msg << "\n";
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
+    return 0;
+}
+
+int test_zmq_consumer(Protocol::Message& message)
+{
+    zmq::context_t context(1);
+    zmq::socket_t subscriber(context, ZMQ_SUB);
+    subscriber.connect("tcp://localhost:5556");
+    subscriber.set(zmq::sockopt::subscribe, "");
+
+    while (true)
+    {
+        zmq::message_t message;
+        zmq::recv_result_t recv_result = subscriber.recv(message);
+        if (recv_result.has_value())
+        {
+            LOG(INFO) << "value: " << recv_result.value() << "\n";
+        }
+        else 
+        {
+            LOG(INFO) << "no value assigned\n";
+        }
+        std::string msg = std::string(static_cast<char *>(message.data()), message.size());
+        LOG(INFO) << "Received: " << msg << "\n";
+    }
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 DEFINE_int32(id, 13322, "module layer");
 
@@ -812,7 +857,9 @@ int main(int argc, char* argv[])
     {
         {"input_id_and_get_video_file_with_httplib", input_id_and_get_video_file_with_httplib},
         {"get_base64_save_image", get_base64_save_image},
-        {"mongoose_minimal_static_server", mongoose_minimal_static_server}
+        {"mongoose_minimal_static_server", mongoose_minimal_static_server},
+        {"test_zmq_producer", test_zmq_producer},
+        {"test_zmq_consumer", test_zmq_consumer}
     };
 
     Protocol::Message message;

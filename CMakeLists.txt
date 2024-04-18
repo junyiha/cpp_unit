@@ -76,6 +76,10 @@ else(CURL_FOUND)
 endif(CURL_FOUND)
 
 #
+set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/data/usr/local/ffmpeg/lib/pkgconfig")
+pkg_check_modules(zmq REQUIRED IMPORTED_TARGET libzmq)
+
+#
 aux_source_directory(${CMAKE_SOURCE_DIR}/third_party/mongoose/ MONGOOSE_SRC_FILES)
 
 #
@@ -100,6 +104,15 @@ target_link_libraries(any_unit glog::glog
                                CURL::libcurl
                      )
 
+get_target_property(TARGET_SOURCES any_unit SOURCES)
+message(STATUS "network target sources: ${TARGET_SOURCES}")
+
+get_target_property(TARGET_INCLUDE_DIRECTORIES any_unit INCLUDE_DIRECTORIES)
+message(STATUS "network target include directories: ${TARGET_INCLUDE_DIRECTORIES}")
+
+get_target_property(TARGET_LINK_LIBRARIES any_unit LINK_LIBRARIES)
+message(STATUS "network target include directories: ${TARGET_LINK_LIBRARIES}")
+
 #
 aux_source_directory(${CMAKE_SOURCE_DIR}/net/ NETWORK_SRC_FILES)
 
@@ -120,7 +133,17 @@ target_link_libraries(net_unit glog::glog
                                PkgConfig::ffmpeg 
                                ${OpenCV_LIBS}
                                CURL::libcurl
+                               PkgConfig::zmq
                      )
+
+get_target_property(TARGET_SOURCES net_unit SOURCES)
+message(STATUS "network target sources: ${TARGET_SOURCES}")
+
+get_target_property(TARGET_INCLUDE_DIRECTORIES net_unit INCLUDE_DIRECTORIES)
+message(STATUS "network target include directories: ${TARGET_INCLUDE_DIRECTORIES}")
+
+get_target_property(TARGET_LINK_LIBRARIES net_unit LINK_LIBRARIES)
+message(STATUS "network target include directories: ${TARGET_LINK_LIBRARIES}")
 
 #
 aux_source_directory(${CMAKE_SOURCE_DIR}/ffmpeg/ FFMPEG_SRC_FILES)
@@ -144,6 +167,14 @@ target_link_libraries(ffmpeg_unit glog::glog
                                   CURL::libcurl
                      )
 
+get_target_property(TARGET_SOURCES ffmpeg_unit SOURCES)
+message(STATUS "ffmpeg target sources: ${TARGET_SOURCES}")
+
+get_target_property(TARGET_INCLUDE_DIRECTORIES ffmpeg_unit INCLUDE_DIRECTORIES)
+message(STATUS "ffmpeg target include directories: ${TARGET_INCLUDE_DIRECTORIES}")
+
+get_target_property(TARGET_LINK_LIBRARIES ffmpeg_unit LINK_LIBRARIES)
+message(STATUS "network target include directories: ${TARGET_LINK_LIBRARIES}")
 
 #
 aux_source_directory(${CMAKE_SOURCE_DIR}/opencv/ OPENCV_SRC_FILES)
@@ -167,8 +198,11 @@ target_link_libraries(opencv_unit glog::glog
                                   CURL::libcurl
                      )
 
-get_target_property(TARGET_SOURCES ffmpeg_unit SOURCES)
-message(STATUS "ffmpeg target sources: ${TARGET_SOURCES}")
+get_target_property(TARGET_SOURCES opencv_unit SOURCES)
+message(STATUS "opencv target sources: ${TARGET_SOURCES}")
 
-get_target_property(TARGET_INCLUDE_DIRECTORIES ffmpeg_unit INCLUDE_DIRECTORIES)
-message(STATUS "ffmpeg target include directories: ${TARGET_INCLUDE_DIRECTORIES}")
+get_target_property(TARGET_INCLUDE_DIRECTORIES opencv_unit INCLUDE_DIRECTORIES)
+message(STATUS "opencv target include directories: ${TARGET_INCLUDE_DIRECTORIES}")
+
+get_target_property(TARGET_LINK_LIBRARIES opencv_unit LINK_LIBRARIES)
+message(STATUS "network target include directories: ${TARGET_LINK_LIBRARIES}")
