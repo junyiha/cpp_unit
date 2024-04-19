@@ -1762,6 +1762,22 @@ int mkdtemp_command()
     return 0;
 }
 
+int test_vector_copy_assign()
+{
+    std::vector<float> arr1{1, 2, 3, 4, 5, 6};
+    std::vector<float> pose{123, 132, 4355};
+
+    std::for_each(arr1.begin(), arr1.end(), [](float it){LOG(INFO) << it << "\n";});
+    std::for_each(pose.begin(), pose.end(), [](float it){LOG(INFO) << it << "\n";});
+
+    arr1.erase(arr1.begin() + 3, arr1.end());
+    std::copy(pose.begin(), pose.end(), std::back_inserter(arr1));
+
+    std::for_each(arr1.begin(), arr1.end(), [](float it){LOG(INFO) << it << "\n";});
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -1805,7 +1821,8 @@ int main(int argc, char* argv[])
         {"test_nlohmann_json_double_array", test_nlohmann_json_double_array},
         {"sort_compare_function", sort_compare_function},
         {"video_to_image_with_opencv", video_to_image_with_opencv},
-        {"mkdtemp_command", mkdtemp_command}
+        {"mkdtemp_command", mkdtemp_command},
+        {"test_vector_copy_assign", test_vector_copy_assign}
     };
 
     auto it = func_table.find(FLAGS_module);
