@@ -318,6 +318,41 @@ int list_files()
     return 0;
 }
 
+int list_all_mp4_file()
+{
+    const std::string dir{"/mnt/remote/190-mnt/样本采集/车冲/cz002/video/wash/"};
+
+    std::vector<std::string> path_container;
+
+    for (const auto& entry : boost::filesystem::directory_iterator(dir))
+    {
+        if (boost::filesystem::is_directory(entry.path()))
+        {
+            for (const auto& iter_entry : boost::filesystem::directory_iterator(entry.path()))
+            {
+                for (const auto& tmp_entry : boost::filesystem::directory_iterator(iter_entry.path()))
+                {
+                    if (boost::filesystem::is_regular_file(tmp_entry.status()))
+                    {
+                        path_container.push_back(tmp_entry.path().string());
+                    }
+                }
+            }
+        }
+    }
+
+    const std::string destination_dir{"/mnt/remote/190-mnt/zhangjunyi/Videos/vehcile/car-wash/"};
+    for (auto& path : path_container)
+    {
+        LOG(INFO) << path << "\n";
+        std::stringstream os_str;
+        os_str << "cp " << path << " " << destination_dir;
+        std::system(os_str.str().c_str());
+    }
+
+    return 0;
+}
+
 int request_token()
 {
     namespace asio = boost::asio;
@@ -1797,6 +1832,7 @@ int main(int argc, char* argv[])
         {"class-delegating-constructor", class_delegating_constructor},
         {"file-to-memory", file_to_memory},
         {"list-files", list_files},
+        {"list_all_mp4_file", list_all_mp4_file},
         {"request-token", request_token},
         {"httplib-request-token", httplib_request_token},
         {"httplib-upload-file", httplib_upload_file},
