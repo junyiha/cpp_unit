@@ -19,7 +19,7 @@ else(OpenSSL_FOUND)
 endif(OpenSSL_FOUND)
 
 #
-find_package(Boost 1.83.0 REQUIRED COMPONENTS system filesystem thread)
+find_package(Boost 1.83.0 REQUIRED COMPONENTS system filesystem thread timer)
 if(Boost_FOUND)
     message(STATUS "find boost library, include directory: " ${Boost_INCLUDE_DIR})
     message(STATUS "find boost library, libraries directory: " ${Boost_LIBRARY_DIRS})
@@ -97,6 +97,7 @@ target_link_libraries(any_unit glog::glog
                                gflags 
                                yaml-cpp::yaml-cpp 
                                Boost::filesystem 
+                               Boost::timer 
                                OpenSSL::SSL 
                                OpenSSL::Crypto 
                                PkgConfig::ffmpeg 
@@ -105,13 +106,13 @@ target_link_libraries(any_unit glog::glog
                      )
 
 get_target_property(TARGET_SOURCES any_unit SOURCES)
-message(STATUS "network target sources: ${TARGET_SOURCES}")
+message(STATUS "anything target sources: ${TARGET_SOURCES}")
 
 get_target_property(TARGET_INCLUDE_DIRECTORIES any_unit INCLUDE_DIRECTORIES)
-message(STATUS "network target include directories: ${TARGET_INCLUDE_DIRECTORIES}")
+message(STATUS "anything target include directories: ${TARGET_INCLUDE_DIRECTORIES}")
 
 get_target_property(TARGET_LINK_LIBRARIES any_unit LINK_LIBRARIES)
-message(STATUS "network target include directories: ${TARGET_LINK_LIBRARIES}")
+message(STATUS "anything target include directories: ${TARGET_LINK_LIBRARIES}")
 
 #
 aux_source_directory(${CMAKE_SOURCE_DIR}/net/ NETWORK_SRC_FILES)
@@ -174,7 +175,7 @@ get_target_property(TARGET_INCLUDE_DIRECTORIES ffmpeg_unit INCLUDE_DIRECTORIES)
 message(STATUS "ffmpeg target include directories: ${TARGET_INCLUDE_DIRECTORIES}")
 
 get_target_property(TARGET_LINK_LIBRARIES ffmpeg_unit LINK_LIBRARIES)
-message(STATUS "network target include directories: ${TARGET_LINK_LIBRARIES}")
+message(STATUS "ffmpeg target include directories: ${TARGET_LINK_LIBRARIES}")
 
 #
 aux_source_directory(${CMAKE_SOURCE_DIR}/opencv/ OPENCV_SRC_FILES)
@@ -205,4 +206,4 @@ get_target_property(TARGET_INCLUDE_DIRECTORIES opencv_unit INCLUDE_DIRECTORIES)
 message(STATUS "opencv target include directories: ${TARGET_INCLUDE_DIRECTORIES}")
 
 get_target_property(TARGET_LINK_LIBRARIES opencv_unit LINK_LIBRARIES)
-message(STATUS "network target include directories: ${TARGET_LINK_LIBRARIES}")
+message(STATUS "opencv target include directories: ${TARGET_LINK_LIBRARIES}")

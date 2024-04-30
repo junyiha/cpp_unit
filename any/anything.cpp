@@ -246,8 +246,44 @@ int class_with_thread()
     // d.Print();
     // d.Join();
     // d.PrintV2();
-    LOG(INFO) << "print v3\n";
-    d.PrintV3();
+    // LOG(INFO) << "print v3\n";
+    // d.PrintV3();
+
+    class A
+    {
+    public:
+        void CreateTask(std::string id)
+        {
+            task_table[id] = std::thread(&A::ExecuteTask, this);
+        }
+
+    private:
+        void ExecuteTask()
+        {
+            while (true)
+            {
+                LOG(INFO) << "execute task\n";
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
+        }
+
+    public:
+        std::map<std::string, std::thread> task_table;
+    };
+
+    A a;
+    std::string task{"aaa"};
+    a.CreateTask(task);
+
+    auto it = a.task_table.find(task);
+    if (it != a.task_table.end())
+    {
+        it->second.join();
+    }
+    else 
+    {
+        LOG(INFO) << "not found task: " << task << "\n";
+    }
     
     return 0;
 }
@@ -1813,6 +1849,91 @@ int test_vector_copy_assign()
     return 0;
 }
 
+int test_boost_thread_pool()
+{
+    boost::asio::thread_pool tp(4);
+
+    for (int i = 0; i < 4; i++)
+    {
+        boost::asio::post(tp, [i](){
+            LOG(INFO) << "Task: " << i << " executed in thread: " << std::this_thread::get_id() << "\n";
+        });
+    }
+
+    auto tmp = tp.get_executor();
+
+    tp.join();
+
+    return 0;
+}
+
+
+int test_boost_asio_deadline_timer()
+{
+    boost::timer::auto_cpu_timer t;
+    boost::asio::io_context io;
+
+    boost::asio::deadline_timer timer(io, boost::posix_time::seconds(5));
+    boost::system::error_code ec;
+    // timer.wait(ec);
+    timer.async_wait([](const boost::system::error_code&){
+        LOG(INFO) << "Timer expired!\n";
+    });
+
+    std::size_t num_events = io.run_for(std::chrono::seconds(2));
+
+    LOG(INFO) << "Handled " << num_events << " events.\n";
+
+    return 0;
+}
+
+int test_interruptible_sleeper()
+{
+    class InterruptibleSleeper
+    {
+    public:
+        bool wait_for(std::chrono::duration<double> const& time)
+        {
+            std::unique_lock<std::mutex> lock(m);
+            return !cv.wait_for(lock, time, [&]{return terminate;});
+        }
+
+        void interrupt()
+        {
+            std::unique_lock<std::mutex> lock(m);
+            terminate = true;
+            cv.notify_all();
+        }
+
+    private:
+        std::condition_variable cv;
+        std::mutex m;
+        bool terminate{false};
+    };
+
+    InterruptibleSleeper sleeper;
+
+    auto tmp = [&sleeper](){
+        while (true)
+        {
+            LOG(INFO) << "working\n";
+            sleeper.wait_for(std::chrono::duration<double>(3));
+            LOG(INFO) << "next loop\n";
+        }
+        LOG(INFO) << "clean up\n";
+    };
+
+    std::thread t(tmp);
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+
+    sleeper.interrupt();
+
+    t.join();
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -1858,7 +1979,10 @@ int main(int argc, char* argv[])
         {"sort_compare_function", sort_compare_function},
         {"video_to_image_with_opencv", video_to_image_with_opencv},
         {"mkdtemp_command", mkdtemp_command},
-        {"test_vector_copy_assign", test_vector_copy_assign}
+        {"test_vector_copy_assign", test_vector_copy_assign},
+        {"test_boost_thread_pool", test_boost_thread_pool},
+        {"test_boost_asio_deadline_timer", test_boost_asio_deadline_timer},
+        {"test_interruptible_sleeper", test_interruptible_sleeper}
     };
 
     auto it = func_table.find(FLAGS_module);
