@@ -1934,6 +1934,120 @@ int test_interruptible_sleeper()
     return 0;
 }
 
+// 定义告警结构体
+struct Alarm {
+    std::string message;
+    std::string timestamp;
+
+    // 重载小于运算符，用于告警的比较
+    bool operator<(const Alarm& other) const {
+        return std::tie(message, timestamp) < std::tie(other.message, other.timestamp);
+    }
+};
+
+// 去重函数
+void removeDuplicateAlarms(std::set<Alarm>& alarms) {
+    // 无需额外处理，std::set会自动去除重复
+}
+
+int test_duplicate_alarms()
+{
+    std::set<Alarm> alarms;
+
+    // 模拟添加告警
+    alarms.insert({"Temperature too high", "2024-05-07 10:15:00"});
+    alarms.insert({"Temperature too high", "2024-05-07 10:15:00"}); // 重复告警
+    alarms.insert({"Connection lost", "2024-05-07 10:20:00"});
+    alarms.insert({"Temperature too high", "2024-05-07 10:15:00"}); // 又一个重复告警
+    alarms.insert({"Power failure", "2024-05-07 10:25:00"});
+
+    // 去除重复告警
+    removeDuplicateAlarms(alarms);
+
+    // 打印去重后的告警
+    std::cout << "Unique alarms:" << std::endl;
+    for (const auto& alarm : alarms) {
+        std::cout << alarm.message << " at " << alarm.timestamp << std::endl;
+    }
+
+    return 0;
+}
+
+int test_tracking_algorithm()
+{
+    namespace bg = boost::geometry;
+    namespace bgi = boost::geometry::index;
+
+    // 定义二维点
+    typedef bg::model::point<double, 2, bg::cs::cartesian> point_type;
+
+    // 定义运动目标结构体
+    struct MotionTarget {
+        int id; // 目标ID
+        point_type position; // 当前位置
+    };
+
+    // 定义追踪器类
+    class Tracker {
+    private:
+        std::vector<MotionTarget> targets; // 存储目标
+        bgi::rtree<std::pair<point_type, int>, bgi::quadratic<16>> rtree; // R树，用于空间索引
+
+    public:
+        // 添加新目标
+        void addTarget(const MotionTarget& target) {
+            targets.push_back(target);
+            rtree.insert({target.position, target.id});
+        }
+
+        // 更新目标位置
+        void updateTargetPosition(int id, const point_type& newPosition) {
+            auto it = std::find_if(targets.begin(), targets.end(), [id](const MotionTarget& t) { return t.id == id; });
+            if (it != targets.end()) {
+                it->position = newPosition;
+                rtree.remove({it->position, it->id});
+                rtree.insert({it->position, it->id});
+            }
+        }
+
+        // 查询附近的目标
+        std::vector<MotionTarget> queryNearbyTargets(const point_type& position, double radius) const {
+            std::vector<MotionTarget> nearbyTargets;
+            std::vector<std::pair<point_type, int>> result;
+            rtree.query(bgi::nearest(position, radius), std::back_inserter(result));
+
+            for (const auto& entry : result) {
+                nearbyTargets.push_back(targets[entry.second]);
+            }
+
+            return nearbyTargets;
+        }
+    };
+
+    Tracker tracker;
+
+    // 添加一些目标
+    tracker.addTarget({1, point_type(0, 0)});
+    tracker.addTarget({2, point_type(5, 5)});
+    tracker.addTarget({3, point_type(-3, 2)});
+
+    // 更新目标位置
+    tracker.updateTargetPosition(1, point_type(1, 1));
+    tracker.updateTargetPosition(2, point_type(4, 4));
+
+    // 查询附近的目标
+    std::vector<MotionTarget> nearbyTargets = tracker.queryNearbyTargets(point_type(0, 0), 3.0);
+
+    // 输出结果
+    std::cout << "Nearby targets:" << std::endl;
+    for (const auto& target : nearbyTargets) {
+        std::cout << "ID: " << target.id << ", Position: (" << bg::get<0>(target.position) << ", "
+                  << bg::get<1>(target.position) << ")" << std::endl;
+    }
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -1982,7 +2096,9 @@ int main(int argc, char* argv[])
         {"test_vector_copy_assign", test_vector_copy_assign},
         {"test_boost_thread_pool", test_boost_thread_pool},
         {"test_boost_asio_deadline_timer", test_boost_asio_deadline_timer},
-        {"test_interruptible_sleeper", test_interruptible_sleeper}
+        {"test_interruptible_sleeper", test_interruptible_sleeper},
+        {"test_duplicate_alarms", test_duplicate_alarms},
+        {"test_tracking_algorithm", test_tracking_algorithm}
     };
 
     auto it = func_table.find(FLAGS_module);

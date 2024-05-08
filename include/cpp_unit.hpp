@@ -32,12 +32,6 @@
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "httplib.h"            // http tool
 
-#include "boost/filesystem.hpp" // boost
-#include "boost/beast.hpp"
-#include "boost/asio.hpp"
-#include "boost/asio/ssl.hpp"
-#include "boost/timer/timer.hpp"
-
 extern "C"
 {
     #include <libavcodec/avcodec.h>
@@ -46,6 +40,16 @@ extern "C"
     #include <libavutil/time.h>
     #include <libavutil/imgutils.h>
 }
+
+#include "boost/filesystem.hpp" // boost
+#include "boost/beast.hpp"
+#include "boost/asio.hpp"
+#include "boost/asio/ssl.hpp"
+#include "boost/timer/timer.hpp"
+#include "boost/geometry.hpp"
+#include "boost/geometry/geometries/point.hpp"
+#include "boost/geometry/geometries/polygon.hpp"
+#include "boost/geometry/index/rtree.hpp"
 
 #include "opencv4/opencv2/opencv.hpp"
 #include "opencv4/opencv2/dnn.hpp"
