@@ -90,3 +90,5 @@ add_subdirectory(net)
 add_subdirectory(ffmpeg)
 
 add_subdirectory(opencv)
+
+add_subdirectory(leet_code)

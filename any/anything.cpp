@@ -2048,6 +2048,65 @@ int test_tracking_algorithm()
     return 0;
 }
 
+int test_pseudo_random_numbers()
+{
+    srand(time(NULL));
+
+    for (int i = 0; i < 100; i++)
+    {
+        LOG(INFO) << rand() << "\n";
+    }
+
+    return 0;
+}
+
+int test_modern_random_numbers()
+{
+    std::random_device rd;
+    std::mt19937 rng(rd());
+    std::vector<int> number_container;
+
+    std::uniform_int_distribution<int> dist(1, 10000);
+
+    for (int i{0}; i < 1000; ++i)
+    {
+        number_container.push_back(dist(rng));
+    }
+
+    std::ofstream output_file("/tmp/aaa.txt", std::ios::out);
+    for (auto& it : number_container)
+    {
+        output_file << it << "\n";
+    }
+    output_file.close();
+
+    std::vector<int> unsort_numbers;
+    std::ifstream input_file("/tmp/aaa.txt", std::ios::in);
+    while (input_file.good())
+    {
+        int value;
+        input_file >> value;
+        LOG(INFO) << value << "\n";
+        unsort_numbers.push_back(value);
+    }
+    std::sort(unsort_numbers.begin(), unsort_numbers.end());
+    std::for_each(unsort_numbers.begin(), unsort_numbers.end(), [](int val){LOG(INFO) << val << "\n";});
+
+    return 0;
+}
+
+int test_thread_id()
+{
+    std::thread::id master_thread;
+
+    if (std::this_thread::get_id() == master_thread)
+    {
+        LOG(INFO) << "this is master thread\n";
+    }
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -2098,7 +2157,10 @@ int main(int argc, char* argv[])
         {"test_boost_asio_deadline_timer", test_boost_asio_deadline_timer},
         {"test_interruptible_sleeper", test_interruptible_sleeper},
         {"test_duplicate_alarms", test_duplicate_alarms},
-        {"test_tracking_algorithm", test_tracking_algorithm}
+        {"test_tracking_algorithm", test_tracking_algorithm},
+        {"test_pseudo_random_numbers", test_pseudo_random_numbers},
+        {"test_modern_random_numbers", test_modern_random_numbers},
+        {"test_thread_id", test_thread_id}
     };
 
     auto it = func_table.find(FLAGS_module);
