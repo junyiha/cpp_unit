@@ -76,6 +76,14 @@ else(CURL_FOUND)
 endif(CURL_FOUND)
 
 #
+find_package(dlib REQUIRED PATHS ${CMAKE_SOURCE_DIR}/third_party/dlib/lib/cmake/dlib/ NO_DEFAULT_PATH)
+if(dlib_FOUND)
+    message(STATUS "find dlib library, include directory: " ${dlib_INCLUDE_DIR})
+else(dlib_FOUND)
+    message(FATAL_ERROR "Can not find dlib library")
+endif(dlib_FOUND)
+
+#
 set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/data/usr/local/ffmpeg/lib/pkgconfig")
 pkg_check_modules(zmq REQUIRED IMPORTED_TARGET libzmq)
 

@@ -10,6 +10,9 @@
  */
 #include "protocol.hpp"
 #include "MediaPlayer.hpp"
+#include "dlib/include/dlib/image_processing/frontal_face_detector.h"
+#include "dlib/include/dlib/gui_widgets.h"
+#include "dlib/include/dlib/image_io.h"
 
 void InitGlog(const char *program_path)
 {
@@ -544,6 +547,30 @@ int test_ffmpeg_pull_rtsp_object(Protocol::Message& message)
     return 0;
 }
 
+int test_dlib_face_detect(Protocol::Message& message)
+{
+    dlib::frontal_face_detector detector = dlib::get_frontal_face_detector();
+    dlib::image_window win;
+    std::string image_path{"/mnt/remote/190-mnt/faceNet/data11/tmp9055.jpg"};
+
+    dlib::array2d<unsigned char> img;
+    dlib::load_image(img, image_path);
+
+    dlib::pyramid_up(img);
+
+    std::vector<dlib::rectangle> dets = detector(img);
+    LOG(INFO) << "number of faces detected: " << dets.size() << "\n";
+
+    win.clear_overlay();
+    win.set_image(img);
+    win.add_overlay(dets, dlib::rgb_pixel(255, 0, 0));
+
+    LOG(INFO) << "Hit enter to process the next image...\n";
+    std::cin.get();
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 DEFINE_int64(id, 123, "module layer");
 
@@ -564,7 +591,8 @@ int main(int argc, char* argv[])
         {"ffmpeg_rtsp_to_image", ffmpeg_rtsp_to_image},
         {"ffmpeg_images_to_video", ffmpeg_images_to_video},
         {"ffmpeg_images_to_video_in_command", ffmpeg_images_to_video_in_command},
-        {"test_ffmpeg_pull_rtsp_object", test_ffmpeg_pull_rtsp_object}
+        {"test_ffmpeg_pull_rtsp_object", test_ffmpeg_pull_rtsp_object},
+        {"test_dlib_face_detect", test_dlib_face_detect}
     };
 
     auto it = func_table.find(FLAGS_module);

@@ -22,6 +22,7 @@ target_link_libraries(ffmpeg_unit glog::glog
                                   PkgConfig::ffmpeg 
                                   ${OpenCV_LIBS}
                                   CURL::libcurl
+                                  dlib::dlib
                      )
 
 get_target_property(TARGET_SOURCES ffmpeg_unit SOURCES)
