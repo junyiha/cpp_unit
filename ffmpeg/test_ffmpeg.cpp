@@ -9,6 +9,7 @@
  * 
  */
 #include "protocol.hpp"
+#include "MediaPlayer.hpp"
 
 void InitGlog(const char *program_path)
 {
@@ -507,6 +508,42 @@ int ffmpeg_images_to_video_in_command(Protocol::Message& message)
     return 0;
 }
 
+int test_ffmpeg_pull_rtsp_object(Protocol::Message& message)
+{
+    ffmpeg_unit::Media mediaA;
+    ffmpeg_unit::Media mediaB;
+
+    mediaA.Open("rtsp://admin:abcd1234@192.169.8.153");
+    mediaB.Open("rtsp://admin:a1234567@192.169.10.112");
+
+    mediaA.Play();
+    mediaB.Play();
+
+    while (true)
+    {
+        LOG(INFO) << "input command:(s to save image, q to quit)\n";
+        char cmd;
+        std::cin >> cmd;
+        if (cmd == 's')
+        {
+            auto imgA = mediaA.GetImage();
+            auto imgB = mediaB.GetImage();
+            cv::imwrite("/tmp/imgA.jpg", imgA);
+            cv::imwrite("/tmp/imgB.jpg", imgB);
+        }
+        else if (cmd == 'q')
+        {
+            break;
+        }
+        else 
+        {
+            LOG(WARNING) << "invalid command: " << cmd << "\n";
+        }
+    }
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 DEFINE_int64(id, 123, "module layer");
 
@@ -526,7 +563,8 @@ int main(int argc, char* argv[])
         {"ffmpeg_record_video", ffmpeg_record_video},
         {"ffmpeg_rtsp_to_image", ffmpeg_rtsp_to_image},
         {"ffmpeg_images_to_video", ffmpeg_images_to_video},
-        {"ffmpeg_images_to_video_in_command", ffmpeg_images_to_video_in_command}
+        {"ffmpeg_images_to_video_in_command", ffmpeg_images_to_video_in_command},
+        {"test_ffmpeg_pull_rtsp_object", test_ffmpeg_pull_rtsp_object}
     };
 
     auto it = func_table.find(FLAGS_module);

@@ -9,6 +9,7 @@ add_executable(ffmpeg_unit ${FFMPEG_SRC_FILES} ${MONGOOSE_SRC_FILES})
 target_include_directories(ffmpeg_unit PUBLIC ${Boost_INCLUDE_DIR} 
                                               ${CMAKE_SOURCE_DIR}/include/ 
                                               ${CMAKE_SOURCE_DIR}/third_party/ 
+                                              ${CMAKE_CURRENT_SOURCE_DIR}/
                                               ${OpenCV_INCLUDE_DIRS}
                           )
 
