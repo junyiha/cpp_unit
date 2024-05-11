@@ -514,34 +514,56 @@ int ffmpeg_images_to_video_in_command(Protocol::Message& message)
 int test_ffmpeg_pull_rtsp_object(Protocol::Message& message)
 {
     ffmpeg_unit::Media mediaA;
-    ffmpeg_unit::Media mediaB;
+    // ffmpeg_unit::Media mediaB;
 
     mediaA.Open("rtsp://admin:abcd1234@192.169.8.153");
-    mediaB.Open("rtsp://admin:a1234567@192.169.10.112");
+    // mediaB.Open("rtsp://admin:a1234567@192.169.10.112");
 
     mediaA.Play();
-    mediaB.Play();
+    // mediaB.Play();
+
+    ffmpeg_unit::FaceRecognition face_recognition;
 
     while (true)
     {
-        LOG(INFO) << "input command:(s to save image, q to quit)\n";
-        char cmd;
-        std::cin >> cmd;
-        if (cmd == 's')
+        auto imgA = mediaA.GetImage();
+        // auto imgB = mediaB.GetImage();
+        if (imgA.empty())
         {
-            auto imgA = mediaA.GetImage();
-            auto imgB = mediaB.GetImage();
-            cv::imwrite("/tmp/imgA.jpg", imgA);
-            cv::imwrite("/tmp/imgB.jpg", imgB);
+            LOG(WARNING) << "empty image...\n";
+            continue;
         }
-        else if (cmd == 'q')
-        {
-            break;
-        }
-        else 
-        {
-            LOG(WARNING) << "invalid command: " << cmd << "\n";
-        }
+        face_recognition.Detect(imgA);
+        // face_recognition.Detect(imgB);
+        cv::imshow("imgA", imgA);
+        // cv::imshow("imgB", imgB);
+        cv::waitKey(500);
+        // cv::imwrite("/tmp/imgA.jpg", imgA);
+        // cv::imwrite("/tmp/imgB.jpg", imgB);
+
+        // LOG(INFO) << "input command:(s to save image, q to quit)\n";
+        // char cmd;
+        // std::cin >> cmd;
+        // if (cmd == 's')
+        // {
+        //     auto imgA = mediaA.GetImage();
+        //     auto imgB = mediaB.GetImage();
+        //     cv::imwrite("/tmp/imgA.jpg", imgA);
+        //     cv::imwrite("/tmp/imgB.jpg", imgB);
+        //     face_recognition.Detect(imgA);
+        //     face_recognition.Detect(imgB);
+        //     cv::imshow("imgA", imgA);
+        //     cv::imshow("imgB", imgB);
+        //     cv::waitKey(0);
+        // }
+        // else if (cmd == 'q')
+        // {
+        //     break;
+        // }
+        // else 
+        // {
+        //     LOG(WARNING) << "invalid command: " << cmd << "\n";
+        // }
     }
 
     return 0;
