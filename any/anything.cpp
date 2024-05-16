@@ -775,7 +775,9 @@ int get_year_month_day_hour_minute()
 {
     auto now = std::chrono::system_clock::now();
 
-    auto timestamp = std::chrono::system_clock::to_time_t(now);
+    auto ms = std::chrono::time_point_cast<std::chrono::microseconds>(now);
+
+    auto timestamp = ms.time_since_epoch().count();
 
     auto now_tm = std::localtime(&timestamp);
     
@@ -2107,6 +2109,15 @@ int test_thread_id()
     return 0;
 }
 
+int test_glog_vector()
+{
+    std::vector<int> arr{1, 2, 3, 4};
+
+    std::for_each(arr.begin(), arr.end(), [](int val){LOG(INFO) << val << ", ";});
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -2160,7 +2171,8 @@ int main(int argc, char* argv[])
         {"test_tracking_algorithm", test_tracking_algorithm},
         {"test_pseudo_random_numbers", test_pseudo_random_numbers},
         {"test_modern_random_numbers", test_modern_random_numbers},
-        {"test_thread_id", test_thread_id}
+        {"test_thread_id", test_thread_id},
+        {"test_glog_vector", test_glog_vector}
     };
 
     auto it = func_table.find(FLAGS_module);
