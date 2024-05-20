@@ -12,6 +12,8 @@
 #ifndef CPP_UNIT_HPP
 #define CPP_UNIT_HPP
 
+#include <sys/sysinfo.h>
+
 #include <string>
 #include <iostream>
 #include <fstream>

@@ -2118,6 +2118,42 @@ int test_glog_vector()
     return 0;
 }
 
+int test_move_vector()
+{
+    std::vector<int> v1{1, 2, 3};
+    std::vector<int> v2;
+
+    LOG(INFO) << "Before std::move\n";
+    std::for_each(v1.begin(), v1.end(), [](int val){LOG(INFO) << "v1: " << val;});
+    std::for_each(v2.begin(), v2.end(), [](int val){LOG(INFO) << "v2: " << val;});
+
+    v2 = std::move(v1);
+
+    LOG(INFO) << "After std::move\n";
+    std::for_each(v1.begin(), v1.end(), [](int val){LOG(INFO) << "v1: " << val;});
+    std::for_each(v2.begin(), v2.end(), [](int val){LOG(INFO) << "v2: " << val;});
+
+    return 0;
+}
+
+int test_sysinfo()
+{
+    struct sysinfo sys_info;
+    int res = sysinfo(&sys_info);
+    if (res == -1)
+    {
+        return res;
+    }
+
+    unsigned long total_memory = sys_info.totalram;
+    unsigned long free_memory = sys_info.freeram;
+
+    LOG(INFO) << "total memory: " << total_memory / 1024 << "\n"
+              << "free memory: " << free_memory / 1024 << "\n";
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -2172,7 +2208,9 @@ int main(int argc, char* argv[])
         {"test_pseudo_random_numbers", test_pseudo_random_numbers},
         {"test_modern_random_numbers", test_modern_random_numbers},
         {"test_thread_id", test_thread_id},
-        {"test_glog_vector", test_glog_vector}
+        {"test_glog_vector", test_glog_vector},
+        {"test_move_vector", test_move_vector},
+        {"test_sysinfo", test_sysinfo}
     };
 
     auto it = func_table.find(FLAGS_module);
