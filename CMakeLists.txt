@@ -5,12 +5,13 @@ cmake_minimum_required(VERSION 3.20)
 project(cpp_unit)
 
 #
-set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_TYPE "Debug")
 # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
 # set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -pg")
+set(CMAKE_THREAD_LIBS_INIT "-lpthread")
 
 #
 find_package(OpenSSL REQUIRED)
@@ -21,7 +22,7 @@ else(OpenSSL_FOUND)
 endif(OpenSSL_FOUND)
 
 #
-find_package(Boost 1.83.0 REQUIRED COMPONENTS system filesystem thread timer)
+find_package(Boost 1.83.0 PATHS /mnt/data/boost/lib/cmake/Boost-1.85.0  REQUIRED COMPONENTS system filesystem thread timer)
 if(Boost_FOUND)
     message(STATUS "find boost library, include directory: " ${Boost_INCLUDE_DIR})
     message(STATUS "find boost library, libraries directory: " ${Boost_LIBRARY_DIRS})
@@ -95,10 +96,10 @@ aux_source_directory(${CMAKE_SOURCE_DIR}/third_party/mongoose/ MONGOOSE_SRC_FILE
 #
 add_subdirectory(any)
 
-add_subdirectory(net)
+# add_subdirectory(net)
 
-add_subdirectory(ffmpeg)
+# add_subdirectory(ffmpeg)
 
-add_subdirectory(opencv)
+# add_subdirectory(opencv)
 
-add_subdirectory(leet_code)
+# add_subdirectory(leet_code)

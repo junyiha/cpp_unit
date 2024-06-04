@@ -16,7 +16,7 @@ void InitGlog(const char *program_path)
 {
     google::InitGoogleLogging(program_path);
     
-    FLAGS_log_dir = "/data/home/user/workspace/cpp_unit/data/log/";
+    FLAGS_log_dir = "/tmp/";
     FLAGS_log_year_in_prefix = false;
     FLAGS_log_utc_time = false;
     FLAGS_log_link = false;
@@ -825,106 +825,106 @@ int get_save_path()
     return 0;
 }
 
-int http_server_with_mongoose()
-{
-    struct HttpMessage
-    {
-        std::string path;
-        std::string method;
-        std::string body;
+// int http_server_with_mongoose()
+// {
+//     struct HttpMessage
+//     {
+//         std::string path;
+//         std::string method;
+//         std::string body;
 
-        std::string response_type;
-        std::string response_body;
-    };
+//         std::string response_type;
+//         std::string response_body;
+//     };
 
-    class HttpWithMongoose
-    {
-    private:
-        struct mg_mgr mgr;
-        struct mg_connection *connect;
-        boost::asio::thread_pool tp;
+//     class HttpWithMongoose
+//     {
+//     private:
+//         struct mg_mgr mgr;
+//         struct mg_connection *connect;
+//         boost::asio::thread_pool tp;
 
-    public:
-        HttpWithMongoose() : tp(std::thread::hardware_concurrency())
-        {
-            mg_mgr_init(&mgr);
-        }
-        virtual ~HttpWithMongoose()
-        {
-            mg_mgr_free(&mgr);
-        }
+//     public:
+//         HttpWithMongoose() : tp(std::thread::hardware_concurrency())
+//         {
+//             mg_mgr_init(&mgr);
+//         }
+//         virtual ~HttpWithMongoose()
+//         {
+//             mg_mgr_free(&mgr);
+//         }
 
-    public:
-        void Start()
-        {
-            connect = mg_http_listen(&mgr, "0.0.0.0:9999", handle_event, this);
+//     public:
+//         void Start()
+//         {
+//             connect = mg_http_listen(&mgr, "0.0.0.0:9999", handle_event, this);
 
-            while (true)
-            {
-                mg_mgr_poll(&mgr, 50);
-            }
-        }
+//             while (true)
+//             {
+//                 mg_mgr_poll(&mgr, 50);
+//             }
+//         }
 
-    private:
-        void Dispath(HttpMessage& http_message)
-        {
-            LOG(INFO) << "path: " << http_message.path << "\n"
-                      << "method: " << http_message.method << "\n"
-                      << "body: " << http_message.body << "\n";
+//     private:
+//         void Dispath(HttpMessage& http_message)
+//         {
+//             LOG(INFO) << "path: " << http_message.path << "\n"
+//                       << "method: " << http_message.method << "\n"
+//                       << "body: " << http_message.body << "\n";
             
-            http_message.response_type = "Content-type: application/json";
+//             http_message.response_type = "Content-type: application/json";
 
-            nlohmann::json reply_data;
-            reply_data["hello"] = "http with mongoose!";
-            http_message.response_body = reply_data.dump();
-        }
+//             nlohmann::json reply_data;
+//             reply_data["hello"] = "http with mongoose!";
+//             http_message.response_body = reply_data.dump();
+//         }
 
-    private:
-        static void handle_event(mg_connection *connect, int ev, void *ev_data, void *fn_data)
-        {
-            HttpWithMongoose* this_ptr = static_cast<HttpWithMongoose *>(fn_data);
-            struct mg_http_message* hm = static_cast<struct mg_http_message*>(ev_data);
+//     private:
+//         static void handle_event(mg_connection *connect, int ev, void *ev_data, void *fn_data)
+//         {
+//             HttpWithMongoose* this_ptr = static_cast<HttpWithMongoose *>(fn_data);
+//             struct mg_http_message* hm = static_cast<struct mg_http_message*>(ev_data);
 
-            switch (ev)
-            {
-                case MG_EV_HTTP_MSG:
-                {
-                    HttpMessage http_message;
+//             switch (ev)
+//             {
+//                 case MG_EV_HTTP_MSG:
+//                 {
+//                     HttpMessage http_message;
 
-                    http_message.path = std::string(hm->uri.ptr, hm->uri.len);
-                    http_message.method = std::string(hm->method.ptr, hm->method.len);
-                    http_message.body = std::string(hm->body.ptr, hm->body.len);
+//                     http_message.path = std::string(hm->uri.ptr, hm->uri.len);
+//                     http_message.method = std::string(hm->method.ptr, hm->method.len);
+//                     http_message.body = std::string(hm->body.ptr, hm->body.len);
 
-                    // std::thread tmp_thread = std::thread([](HttpMessage http_message, HttpWithMongoose* this_ptr, struct mg_connection* connect)
-                    // {
-                    //     this_ptr->Dispath(http_message);
+//                     // std::thread tmp_thread = std::thread([](HttpMessage http_message, HttpWithMongoose* this_ptr, struct mg_connection* connect)
+//                     // {
+//                     //     this_ptr->Dispath(http_message);
 
-                    //     mg_http_reply(connect, 200, http_message.response_type.c_str(), http_message.response_body.c_str());
-                    //     connect->is_draining = 1;
-                    // }, http_message, this_ptr, connect);
-                    // tmp_thread.detach();
+//                     //     mg_http_reply(connect, 200, http_message.response_type.c_str(), http_message.response_body.c_str());
+//                     //     connect->is_draining = 1;
+//                     // }, http_message, this_ptr, connect);
+//                     // tmp_thread.detach();
 
-                    auto dpcp = [](HttpMessage http_message, HttpWithMongoose* this_ptr, struct mg_connection* connect)
-                    {
-                        this_ptr->Dispath(http_message);
+//                     auto dpcp = [](HttpMessage http_message, HttpWithMongoose* this_ptr, struct mg_connection* connect)
+//                     {
+//                         this_ptr->Dispath(http_message);
 
-                        mg_http_reply(connect, 200, http_message.response_type.c_str(), http_message.response_body.c_str());
-                        connect->is_draining = 1;
-                    };
-                    boost::asio::post(this_ptr->tp, std::bind(dpcp, http_message, this_ptr, connect));
+//                         mg_http_reply(connect, 200, http_message.response_type.c_str(), http_message.response_body.c_str());
+//                         connect->is_draining = 1;
+//                     };
+//                     boost::asio::post(this_ptr->tp, std::bind(dpcp, http_message, this_ptr, connect));
 
-                    break;
-                }
-            }
-        }
-    };
+//                     break;
+//                 }
+//             }
+//         }
+//     };
 
-    HttpWithMongoose http_server;
+//     HttpWithMongoose http_server;
 
-    http_server.Start();
+//     http_server.Start();
 
-    return 0;
-}
+//     return 0;
+// }
 
 int test_son_call_parent_func()
 {
@@ -1339,6 +1339,28 @@ unsigned char *base64_decode(const char *input, int length) {
     BIO_free_all(bio);
 
     return buffer;
+}
+
+char *base64_encode(const unsigned char *input, int length) {
+    BIO *bio, *b64;
+    BUF_MEM *bufferPtr;
+
+    b64 = BIO_new(BIO_f_base64());
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+    bio = BIO_new(BIO_s_mem());
+    bio = BIO_push(b64, bio);
+
+    BIO_write(bio, input, length);
+    BIO_flush(bio);
+    BIO_get_mem_ptr(bio, &bufferPtr);
+
+    char *encoded = (char *)malloc(bufferPtr->length);
+    memcpy(encoded, bufferPtr->data, bufferPtr->length - 1);
+    encoded[bufferPtr->length - 1] = '\0';
+
+    BIO_free_all(bio);
+
+    return encoded;
 }
 
 int test_master_camera_get_rgb()
@@ -2154,6 +2176,104 @@ int test_sysinfo()
     return 0;
 }
 
+int test_boost_beast_parse_http()
+{
+    std::string raw_response{"HTTP/1.1 200 OK\r\n"
+                               "Server: nginx\r\n"
+                               "Date: Fri, 14 Apr 2023 12:34:56 GMT\r\n"
+                               "Content-Type: text/html; charset=UTF-8\r\n"
+                               "Content-Length: 12\r\n"
+                               "Connection: close\r\n"
+                               "\r\n"
+                               "Hello, world"};
+
+    boost::beast::error_code ec;
+    boost::beast::http::parser<false, boost::beast::http::string_body> parser;
+    parser.put(boost::asio::const_buffer(raw_response.data(), raw_response.size()), ec);
+    if (ec)
+    {
+        LOG(ERROR) << "Error parsing HTTP response: " << ec.message() << "\n";
+        return 1;
+    }
+    auto res = parser.release();
+    LOG(INFO) << "body: " << res.body() << "\n";
+
+    return 0;
+}
+
+int rk_xinzhongda_platform()
+{
+    const std::string addr{"https://d6cnext.haolink.cn/dcs/api/hardware/ai/alarm"};
+    std::string host{"https://d6cnext.haolink.cn"};
+    std::string path{"/dcs/api/hardware/ai/alarm"};
+    const std::string device_id{"8d514bd3-3cfc-a44f-355a-a91e597ed1f3"};
+    const std::string image{"/data/static/warning_pictures/l7ngi-frame-122.jpg"};
+    const std::string body_type {"application/json"};
+    nlohmann::json send_data;
+    nlohmann::json data;
+
+    send_data["deviceCode"] = device_id;
+    send_data["externalNo"] = device_id;
+
+    auto now = std::chrono::system_clock::now();
+    auto result = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+    send_data["alarmStartTime"] = result.time_since_epoch().count();
+    send_data["alarmEndTime"] = result.time_since_epoch().count();
+    send_data["alarmTime"] = result.time_since_epoch().count();
+    std::ifstream file(image, std::ios::binary);
+    std::vector<char> file_buffer;
+
+    file.seekg(0, std::ios::end);
+    std::streampos file_size = file.tellg();
+    file.seekg(0, std::ios::beg);
+    file_buffer.resize(file_size);
+    file.read(file_buffer.data(), file_size);
+    file.close();
+    char *encode_buffer = base64_encode(reinterpret_cast<unsigned char *>(file_buffer.data()), file_size);
+    send_data["originalImage"]["mediaBase64"] = encode_buffer;
+    send_data["originalImage"]["mediaType"] = ".jpg";
+    send_data["originalImage"]["mediaUrl"] = "";
+    send_data["alarmType"] = 190401;
+    send_data["alarmInfo"] = "安全帽警告";
+    send_data["leftX"] = 566;
+    send_data["leftY"] = 66;
+    send_data["rightX"] = 746;
+    send_data["rightY"] = 253;
+    cv::Mat img = cv::imread(image);
+    cv::Rect roiRect(566, 66, 253 - 66, 746 - 566);
+    cv::Mat roi = cv::Mat(img, roiRect);
+
+    std::vector<uchar> buffer;
+    std::vector<int> params;
+    params.push_back(cv::IMWRITE_JPEG_QUALITY); // 设置 JPG 质量
+    params.push_back(95); // 设置 JPG 图像质量，可根据需要调整
+
+    // 将图像编码为 JPG 格式并保存到内存
+    bool success = cv::imencode(".jpg", roi, buffer, params);
+    send_data["targetImage"]["mediaBase64"] = base64_encode(buffer.data(), buffer.size());
+    send_data["targetImage"]["mediaType"] = ".jpg";
+    send_data["targetImage"]["mediaUrl"] = "";
+    data.push_back(send_data);
+
+    std::ofstream out_file("/tmp/aaa.json", std::ios::out);
+    out_file.write(data.dump().c_str(), data.dump().size());
+    out_file.close();
+
+    cv::imshow("origin image: ", img);
+    cv::imshow("roi image: ", roi);
+    cv::waitKey(0);
+
+    httplib::Client cli(host);
+    cli.set_connection_timeout(3,0);  // 3 seconds
+    cli.set_read_timeout(5, 0);  // 5 seconds
+    cli.set_write_timeout(5, 0);  // 5 seconds
+    
+    auto res = cli.Post(path, data.dump(), body_type);
+    LOG(INFO) << res->body << "\n";
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -2181,7 +2301,7 @@ int main(int argc, char* argv[])
         {"httplib-upload-file-and-push-record", httplib_upload_file_and_push_record},
         {"get-year-month-day-hour-minute", get_year_month_day_hour_minute},
         {"get-save-path", get_save_path},
-        {"http-server-with-mongoose", http_server_with_mongoose},
+        // {"http-server-with-mongoose", http_server_with_mongoose},
         {"test-son-call-parent-func", test_son_call_parent_func},
         {"decorator-sample", decorator_sample},
         {"test-task-use-service", test_task_use_service},
@@ -2210,7 +2330,9 @@ int main(int argc, char* argv[])
         {"test_thread_id", test_thread_id},
         {"test_glog_vector", test_glog_vector},
         {"test_move_vector", test_move_vector},
-        {"test_sysinfo", test_sysinfo}
+        {"test_sysinfo", test_sysinfo},
+        {"test_boost_beast_parse_http", test_boost_beast_parse_http},
+        {"rk_xinzhongda_platform", rk_xinzhongda_platform}
     };
 
     auto it = func_table.find(FLAGS_module);
