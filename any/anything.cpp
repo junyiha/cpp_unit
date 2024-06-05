@@ -2274,6 +2274,148 @@ int rk_xinzhongda_platform()
     return 0;
 }
 
+int test_juansheng_login()
+{
+    std::string login_path{"/jskj-api/api/login"};
+    std::string host{"124.71.157.23:9520"};
+    nlohmann::json send_data;
+    const std::string body_type {"application/json"};
+
+    send_data["mobile"] = "18238398546";
+    send_data["password"] = "123456";
+    
+    httplib::Client cli(host);
+    auto res = cli.Post(login_path, send_data.dump(), body_type);
+    LOG(INFO) << res->body << "\n";
+
+    return 0;
+}
+
+int test_juansheng_get_user_info()
+{
+    std::string token{"ea17108e7fe34adaa957dc7fb3bcd49b"};
+    std::string host{"124.71.157.23:9520"};
+    std::string get_user_info_path{"/jskj-api/api/getUserInfoBySdkUser"};
+
+    httplib::Params params {
+        {"token", token}
+    };
+    httplib::Headers headers {
+        {"content-type", "x-www-form-urlencoded"}
+    };
+
+    httplib::Client cli(host);
+    auto res = cli.Get(get_user_info_path, params, headers);
+    LOG(INFO) << res->body << "\n";
+
+    return 0;
+}
+
+int test_juansheng_get_device_list()
+{
+    std::string token{"ea17108e7fe34adaa957dc7fb3bcd49b"};
+    std::string host{"124.71.157.23:9520"};
+    std::string get_user_info_path{"/jskj-api/api/getDeviceList"};
+
+    httplib::Params params {
+        {"token", token},
+        {"uid", "1798295840306032642"}
+    };
+    httplib::Headers headers {
+        {"content-type", "x-www-form-urlencoded"}
+    };
+
+    httplib::Client cli(host);
+    auto res = cli.Get(get_user_info_path, params, headers);
+    LOG(INFO) << res->body << "\n";
+
+    return 0;
+}
+
+int test_juansheng_class()
+{
+    enum class ErrorType
+    {
+        success = 0,
+        fail
+    };
+
+    enum class JuanshengApi
+    {
+        login
+    };
+
+    class Juansheng
+    {
+    public:
+        Juansheng() = delete;
+        Juansheng(const std::string& host) : m_host(host)
+        {
+
+        }
+        ~Juansheng()
+        {
+
+        }
+
+    public:
+        ErrorType Login(std::string account, std::string password)
+        {
+            ErrorType error_type{ErrorType::success};
+            nlohmann::json send_data;
+            nlohmann::json parse_data;
+            const std::string body_type {"application/json"};
+
+            send_data["mobile"] = account;
+            send_data["password"] = password;
+
+            httplib::Client cli(m_host);
+            auto res = cli.Post(m_api_table[JuanshengApi::login], send_data.dump(), body_type);
+            LOG(INFO) << res->body << "\n";
+            try 
+            {
+                parse_data = nlohmann::json::parse(res->body);
+                if (parse_data["code"] != 0)
+                {
+                    error_type = ErrorType::fail; 
+                    return error_type;
+                }
+                m_token = parse_data["data"]["token"];
+                m_user_id = parse_data["data"]["userId"];
+            }
+            catch (...)
+            {
+                error_type = ErrorType::fail; 
+                return error_type;
+            }
+
+            return error_type;
+        }
+
+    private:
+        std::string m_host;
+        std::string m_token;
+        std::string m_user_id;
+
+        std::map<JuanshengApi, std::string> m_api_table
+        {
+            {JuanshengApi::login, "/jskj-api/api/login"}
+        };
+    };
+
+    ErrorType error_type;
+    Juansheng juan_sheng("124.71.157.23:9520");
+
+    error_type = juan_sheng.Login("18238398546", "123456");
+    if (error_type != ErrorType::success)
+    {
+        LOG(ERROR) << "login failed\n";
+        return -1;
+    }
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -2332,7 +2474,11 @@ int main(int argc, char* argv[])
         {"test_move_vector", test_move_vector},
         {"test_sysinfo", test_sysinfo},
         {"test_boost_beast_parse_http", test_boost_beast_parse_http},
-        {"rk_xinzhongda_platform", rk_xinzhongda_platform}
+        {"rk_xinzhongda_platform", rk_xinzhongda_platform},
+        {"test_juansheng_login", test_juansheng_login},
+        {"test_juansheng_get_user_info", test_juansheng_get_user_info},
+        {"test_juansheng_get_device_list", test_juansheng_get_device_list},
+        {"test_juansheng_class", test_juansheng_class}
     };
 
     auto it = func_table.find(FLAGS_module);
