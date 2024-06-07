@@ -825,106 +825,106 @@ int get_save_path()
     return 0;
 }
 
-// int http_server_with_mongoose()
-// {
-//     struct HttpMessage
-//     {
-//         std::string path;
-//         std::string method;
-//         std::string body;
+int http_server_with_mongoose()
+{
+    struct HttpMessage
+    {
+        std::string path;
+        std::string method;
+        std::string body;
 
-//         std::string response_type;
-//         std::string response_body;
-//     };
+        std::string response_type;
+        std::string response_body;
+    };
 
-//     class HttpWithMongoose
-//     {
-//     private:
-//         struct mg_mgr mgr;
-//         struct mg_connection *connect;
-//         boost::asio::thread_pool tp;
+    class HttpWithMongoose
+    {
+    private:
+        struct mg_mgr mgr;
+        struct mg_connection *connect;
+        boost::asio::thread_pool tp;
 
-//     public:
-//         HttpWithMongoose() : tp(std::thread::hardware_concurrency())
-//         {
-//             mg_mgr_init(&mgr);
-//         }
-//         virtual ~HttpWithMongoose()
-//         {
-//             mg_mgr_free(&mgr);
-//         }
+    public:
+        HttpWithMongoose() : tp(std::thread::hardware_concurrency())
+        {
+            mg_mgr_init(&mgr);
+        }
+        virtual ~HttpWithMongoose()
+        {
+            mg_mgr_free(&mgr);
+        }
 
-//     public:
-//         void Start()
-//         {
-//             connect = mg_http_listen(&mgr, "0.0.0.0:9999", handle_event, this);
+    public:
+        void Start()
+        {
+            connect = mg_http_listen(&mgr, "0.0.0.0:9999", handle_event, this);
 
-//             while (true)
-//             {
-//                 mg_mgr_poll(&mgr, 50);
-//             }
-//         }
+            while (true)
+            {
+                mg_mgr_poll(&mgr, 50);
+            }
+        }
 
-//     private:
-//         void Dispath(HttpMessage& http_message)
-//         {
-//             LOG(INFO) << "path: " << http_message.path << "\n"
-//                       << "method: " << http_message.method << "\n"
-//                       << "body: " << http_message.body << "\n";
+    private:
+        void Dispath(HttpMessage& http_message)
+        {
+            LOG(INFO) << "path: " << http_message.path << "\n"
+                      << "method: " << http_message.method << "\n"
+                      << "body: " << http_message.body << "\n";
             
-//             http_message.response_type = "Content-type: application/json";
+            http_message.response_type = "Content-type: application/json";
 
-//             nlohmann::json reply_data;
-//             reply_data["hello"] = "http with mongoose!";
-//             http_message.response_body = reply_data.dump();
-//         }
+            nlohmann::json reply_data;
+            reply_data["hello"] = "http with mongoose!";
+            http_message.response_body = reply_data.dump();
+        }
 
-//     private:
-//         static void handle_event(mg_connection *connect, int ev, void *ev_data, void *fn_data)
-//         {
-//             HttpWithMongoose* this_ptr = static_cast<HttpWithMongoose *>(fn_data);
-//             struct mg_http_message* hm = static_cast<struct mg_http_message*>(ev_data);
+    private:
+        static void handle_event(mg_connection *connect, int ev, void *ev_data, void *fn_data)
+        {
+            HttpWithMongoose* this_ptr = static_cast<HttpWithMongoose *>(fn_data);
+            struct mg_http_message* hm = static_cast<struct mg_http_message*>(ev_data);
 
-//             switch (ev)
-//             {
-//                 case MG_EV_HTTP_MSG:
-//                 {
-//                     HttpMessage http_message;
+            switch (ev)
+            {
+                case MG_EV_HTTP_MSG:
+                {
+                    HttpMessage http_message;
 
-//                     http_message.path = std::string(hm->uri.ptr, hm->uri.len);
-//                     http_message.method = std::string(hm->method.ptr, hm->method.len);
-//                     http_message.body = std::string(hm->body.ptr, hm->body.len);
+                    http_message.path = std::string(hm->uri.ptr, hm->uri.len);
+                    http_message.method = std::string(hm->method.ptr, hm->method.len);
+                    http_message.body = std::string(hm->body.ptr, hm->body.len);
 
-//                     // std::thread tmp_thread = std::thread([](HttpMessage http_message, HttpWithMongoose* this_ptr, struct mg_connection* connect)
-//                     // {
-//                     //     this_ptr->Dispath(http_message);
+                    // std::thread tmp_thread = std::thread([](HttpMessage http_message, HttpWithMongoose* this_ptr, struct mg_connection* connect)
+                    // {
+                    //     this_ptr->Dispath(http_message);
 
-//                     //     mg_http_reply(connect, 200, http_message.response_type.c_str(), http_message.response_body.c_str());
-//                     //     connect->is_draining = 1;
-//                     // }, http_message, this_ptr, connect);
-//                     // tmp_thread.detach();
+                    //     mg_http_reply(connect, 200, http_message.response_type.c_str(), http_message.response_body.c_str());
+                    //     connect->is_draining = 1;
+                    // }, http_message, this_ptr, connect);
+                    // tmp_thread.detach();
 
-//                     auto dpcp = [](HttpMessage http_message, HttpWithMongoose* this_ptr, struct mg_connection* connect)
-//                     {
-//                         this_ptr->Dispath(http_message);
+                    auto dpcp = [](HttpMessage http_message, HttpWithMongoose* this_ptr, struct mg_connection* connect)
+                    {
+                        this_ptr->Dispath(http_message);
 
-//                         mg_http_reply(connect, 200, http_message.response_type.c_str(), http_message.response_body.c_str());
-//                         connect->is_draining = 1;
-//                     };
-//                     boost::asio::post(this_ptr->tp, std::bind(dpcp, http_message, this_ptr, connect));
+                        mg_http_reply(connect, 200, http_message.response_type.c_str(), http_message.response_body.c_str());
+                        connect->is_draining = 1;
+                    };
+                    boost::asio::post(this_ptr->tp, std::bind(dpcp, http_message, this_ptr, connect));
 
-//                     break;
-//                 }
-//             }
-//         }
-//     };
+                    break;
+                }
+            }
+        }
+    };
 
-//     HttpWithMongoose http_server;
+    HttpWithMongoose http_server;
 
-//     http_server.Start();
+    http_server.Start();
 
-//     return 0;
-// }
+    return 0;
+}
 
 int test_son_call_parent_func()
 {
@@ -2342,7 +2342,45 @@ int test_juansheng_class()
 
     enum class JuanshengApi
     {
-        login
+        login,
+        get_user_info_by_user_id,
+        get_device_list,
+        get_music_list_by_device_id,
+        get_music_list_by_user_id,
+        get_device_volume,
+        upload_file
+    };
+
+    struct JuanshengDeviceInfo
+    {
+        std::string device_id;
+        std::string device_type;
+        std::string device_model;
+        std::string device_name;
+        std::string device_area_code;
+        std::string device_address;
+        float device_lng;
+        float device_lat;
+        std::string device_date_produced;
+        std::string device_launch_sys_data;
+        std::string device_status;
+        std::string device_ip_address;
+        std::string device_inline_date;
+        std::string device_offline_date;
+        std::string device_current_status;
+        std::string device_volume;
+        std::string bind_camera;
+    };
+
+    struct JuanshengSourceInfo
+    {
+        std::string src_name;
+        std::string play_time_length;
+        std::string src_size;
+        std::string id;
+        std::string src_address;
+        std::string src_ext;
+        int src_type;
     };
 
     class Juansheng
@@ -2392,6 +2430,263 @@ int test_juansheng_class()
             return error_type;
         }
 
+        ErrorType GetUserInfoByUserID()
+        {
+            ErrorType error_type{ErrorType::success};
+            nlohmann::json parse_data;
+            httplib::Params params {
+                {"token", m_token}
+            };
+            httplib::Headers headers {
+                {"content-type", "x-www-form-urlencoded"}
+            };
+
+            httplib::Client cli(m_host);
+            auto res = cli.Get(m_api_table[JuanshengApi::get_user_info_by_user_id], params, headers);
+            LOG(INFO) << res->body << "\n";
+            try 
+            {
+                parse_data = nlohmann::json::parse(res->body);
+                if (parse_data["code"] != 0)
+                {
+                    error_type = ErrorType::fail; 
+                    return error_type;
+                }
+            }
+            catch (...)
+            {
+                error_type = ErrorType::fail; 
+                return error_type;
+            }
+
+            return error_type;
+        }
+
+        ErrorType GetDeviceList(std::vector<JuanshengDeviceInfo>& device_list, int page_num = 1, int page_size = 10)
+        {
+            ErrorType error_type{ErrorType::success};
+            nlohmann::json parse_data;
+            httplib::Params params {
+                {"token", m_token},
+                {"uid", m_user_id},
+                {"pageNum", std::to_string(page_num)},
+                {"pageSize", std::to_string(page_size)}
+            };
+            httplib::Headers headers {
+                {"content-type", "x-www-form-urlencoded"}
+            };
+            
+            httplib::Client cli(m_host);
+            auto res = cli.Get(m_api_table[JuanshengApi::get_device_list], params, headers);
+            LOG(INFO) << res->body << "\n";
+            try 
+            {
+                parse_data = nlohmann::json::parse(res->body);
+                if (parse_data["code"] != 0)
+                {
+                    error_type = ErrorType::fail; 
+                    return error_type;
+                }
+
+                for (auto& item : parse_data["data"]["list"])
+                {
+                    JuanshengDeviceInfo device_info;
+                    device_info.device_id = item["deviceId"];
+                    device_info.device_type = item["deviceType"];
+                    // device_info.device_model = item["deviceModel"];
+                    device_info.device_name = item["deviceName"];
+                    // device_info.device_area_code = item["deviceAreaCode"];
+                    device_info.device_address = item["deviceAddress"];
+                    device_info.device_lng = item["deviceLng"];
+                    device_info.device_lat = item["deviceLat"];
+                    // device_info.device_date_produced = item["deviceDateProduced"];
+                    // device_info.device_launch_sys_data = item["deviceLaunchSysData"];
+                    device_info.device_status = item["deviceStatus"];
+                    // device_info.device_ip_address = item["deviceIpaddres"];
+                    device_info.device_inline_date = item["deviceInlineDate"];
+                    device_info.device_offline_date = item["deviceOflineData"];
+                    device_info.device_current_status = item["deviceCurrentstatus"];
+                    // device_info.device_volume = item["deviceVolume"];
+                    // device_info.bind_camera = item["bindCamera"];
+                    device_list.push_back(device_info);
+                }
+            }
+            catch (...)
+            {
+                error_type = ErrorType::fail; 
+                return error_type;
+            }
+
+            return error_type;
+        }
+
+        ErrorType GetMusicListByDeviceId(std::vector<JuanshengSourceInfo>& source_list, const std::string& device_id, int page_num = 1, int page_size = 10)
+        {
+            ErrorType error_type{ErrorType::success};
+            nlohmann::json parse_data;
+            httplib::Params params {
+                {"token", m_token},
+                {"id", device_id},
+                {"pageNum", std::to_string(page_num)},
+                {"pageSize", std::to_string(page_size)}
+            };
+            httplib::Headers headers {
+                {"content-type", "x-www-form-urlencoded"}
+            };
+            
+            httplib::Client cli(m_host);
+            auto res = cli.Get(m_api_table[JuanshengApi::get_music_list_by_device_id], params, headers);
+            LOG(INFO) << res->body << "\n";
+            try 
+            {
+                parse_data = nlohmann::json::parse(res->body);
+                if (parse_data["code"] != 0)
+                {
+                    error_type = ErrorType::fail; 
+                    return error_type;
+                }
+
+                for (auto& item : parse_data["data"]["list"])
+                {
+                    JuanshengSourceInfo source_info;
+                    source_info.src_name = item["srcName"];
+                    source_info.play_time_length = item["playTimelength"];
+                    source_info.src_size = item["srcSize"];
+                    source_info.id = item["id"];
+                    source_info.src_address = item["srcAddress"];
+                    source_info.src_ext = item["srcExt"];
+                    source_info.src_type = item["srcType"];
+                    source_list.push_back(source_info);
+                }
+            }
+            catch (...)
+            {
+                error_type = ErrorType::fail; 
+                return error_type;
+            }
+
+            return error_type;
+        }
+
+        ErrorType GetMusicListByUserId(std::vector<JuanshengSourceInfo>& source_list, int page_num = 1, int page_size = 10)
+        {
+            ErrorType error_type{ErrorType::success};
+            nlohmann::json parse_data;
+            httplib::Params params {
+                {"token", m_token},
+                {"uid", m_user_id},
+                {"pageNum", std::to_string(page_num)},
+                {"pageSize", std::to_string(page_size)}
+            };
+            httplib::Headers headers {
+                {"content-type", "x-www-form-urlencoded"}
+            };
+            
+            httplib::Client cli(m_host);
+            auto res = cli.Get(m_api_table[JuanshengApi::get_music_list_by_user_id], params, headers);
+            LOG(INFO) << res->body << "\n";
+            try 
+            {
+                parse_data = nlohmann::json::parse(res->body);
+                if (parse_data["code"] != 0)
+                {
+                    error_type = ErrorType::fail; 
+                    return error_type;
+                }
+
+                for (auto& item : parse_data["data"]["list"])
+                {
+                    JuanshengSourceInfo source_info;
+                    source_info.src_name = item["srcName"];
+                    source_info.play_time_length = item["playTimelength"];
+                    source_info.src_size = item["srcSize"];
+                    source_info.id = item["id"];
+                    source_info.src_address = item["srcAddress"];
+                    source_info.src_ext = item["srcExt"];
+                    source_info.src_type = item["srcType"];
+                    source_list.push_back(source_info);
+                }
+            }
+            catch (...)
+            {
+                error_type = ErrorType::fail; 
+                return error_type;
+            }
+
+            return error_type;
+        }
+
+        // fail
+        ErrorType GetDeviceVolume(const std::string device_id, std::string& volume)
+        {
+            ErrorType error_type{ErrorType::success};
+            nlohmann::json parse_data;
+            httplib::Params params {
+                {"token", m_token},
+                {"id", device_id}
+            };
+            httplib::Headers headers {
+                {"content-type", "x-www-form-urlencoded"}
+            };
+
+            httplib::Client cli(m_host);
+            auto res = cli.Get(m_api_table[JuanshengApi::get_device_volume], params, headers);
+            LOG(INFO) << res->body << "\n";
+            try 
+            {
+                parse_data = nlohmann::json::parse(res->body);
+                if (parse_data["code"] != 0)
+                {
+                    error_type = ErrorType::fail; 
+                    return error_type;
+                }
+                volume = parse_data["data"];
+            }
+            catch (...)
+            {
+                error_type = ErrorType::fail; 
+                return error_type;
+            }
+
+            return error_type;
+        }
+
+        ErrorType UploadFile(std::string path)
+        {
+            ErrorType error_type{ErrorType::success};
+            nlohmann::json parse_data;
+
+            std::ifstream input_file(path, std::ios::in | std::ios::binary);
+            std::ostringstream file_content;
+            file_content << input_file.rdbuf();
+            input_file.close();
+            std::string file_data = file_content.str();
+            httplib::MultipartFormDataItems items = {
+                {"token", m_token, "", ""},
+                {"file", file_data, "", ""}
+            };
+
+            httplib::Client cli(m_host);
+            auto res = cli.Post(m_api_table[JuanshengApi::upload_file], items);
+            LOG(INFO) << res->body << "\n";
+            try 
+            {
+                parse_data = nlohmann::json::parse(res->body);
+                if (parse_data["code"] != 0)
+                {
+                    error_type = ErrorType::fail; 
+                    return error_type;
+                }
+            }
+            catch (...)
+            {
+                error_type = ErrorType::fail; 
+                return error_type;
+            }
+
+            return error_type;
+        }
+
     private:
         std::string m_host;
         std::string m_token;
@@ -2399,7 +2694,13 @@ int test_juansheng_class()
 
         std::map<JuanshengApi, std::string> m_api_table
         {
-            {JuanshengApi::login, "/jskj-api/api/login"}
+            {JuanshengApi::login, "/jskj-api/api/login"},
+            {JuanshengApi::get_user_info_by_user_id, "/jskj-api/api/getUserInfoBySdkUser"},
+            {JuanshengApi::get_device_list, "/jskj-api/api/getDeviceList"},
+            {JuanshengApi::get_music_list_by_device_id, "/jskj-api/api/getMusicListByDeviceId"},
+            {JuanshengApi::get_music_list_by_user_id, "/jskj-api/api/getMusicListByUserId"},
+            {JuanshengApi::get_device_volume, "/jskj-api/api/getDeviceVolume"},
+            {JuanshengApi::upload_file, "/jskj-api/api/uploadFile"}
         };
     };
 
@@ -2410,6 +2711,57 @@ int test_juansheng_class()
     if (error_type != ErrorType::success)
     {
         LOG(ERROR) << "login failed\n";
+        return -1;
+    }
+
+    error_type = juan_sheng.GetUserInfoByUserID();
+    if (error_type != ErrorType::success)
+    {
+        LOG(ERROR) << "get user info by user id failed\n";
+        return -1;
+    }
+
+    std::vector<JuanshengDeviceInfo> device_list;
+    error_type = juan_sheng.GetDeviceList(device_list);
+    if (error_type != ErrorType::success)
+    {
+        LOG(ERROR) << "get device list failed\n";
+        return -1;
+    }
+    std::for_each(device_list.begin(), device_list.end(), [](JuanshengDeviceInfo info){
+        LOG(INFO) << "device id: " << info.device_id << "\n"
+                  << "device address: " << info.device_address << "\n";
+    });
+
+    std::vector<JuanshengSourceInfo> source_list;
+    error_type = juan_sheng.GetMusicListByDeviceId(source_list, "5lsqf8mpsc");
+    if (error_type != ErrorType::success)
+    {
+        LOG(ERROR) << "get music list by device id failed\n";
+        return -1;
+    }
+    std::for_each(source_list.begin(), source_list.end(), [](JuanshengSourceInfo info){
+        LOG(INFO) << "source id: " << info.src_name << "\n"
+                  << "source address: " << info.src_address << "\n";
+    });
+
+    std::vector<JuanshengSourceInfo> user_source_list;
+    error_type = juan_sheng.GetMusicListByUserId(user_source_list);
+    if (error_type != ErrorType::success)
+    {
+        LOG(ERROR) << "get music list by device id failed\n";
+        return -1;
+    }
+    std::for_each(user_source_list.begin(), user_source_list.end(), [](JuanshengSourceInfo info){
+        LOG(INFO) << "source id: " << info.src_name << "\n"
+                  << "source address: " << info.src_address << "\n";
+    });
+
+    std::string mp3_file{"/mnt/remote/190-mnt/zhangjunyi/Documents/rk_1126/rk_release/static/media/出现火情，请尽快处理.mp3"};
+    error_type = juan_sheng.UploadFile(mp3_file);
+    if (error_type != ErrorType::success)
+    {
+        LOG(ERROR) << "upload file failed\n";
         return -1;
     }
 
@@ -2443,7 +2795,7 @@ int main(int argc, char* argv[])
         {"httplib-upload-file-and-push-record", httplib_upload_file_and_push_record},
         {"get-year-month-day-hour-minute", get_year_month_day_hour_minute},
         {"get-save-path", get_save_path},
-        // {"http-server-with-mongoose", http_server_with_mongoose},
+        {"http-server-with-mongoose", http_server_with_mongoose},
         {"test-son-call-parent-func", test_son_call_parent_func},
         {"decorator-sample", decorator_sample},
         {"test-task-use-service", test_task_use_service},

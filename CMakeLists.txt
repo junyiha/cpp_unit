@@ -96,10 +96,10 @@ aux_source_directory(${CMAKE_SOURCE_DIR}/third_party/mongoose/ MONGOOSE_SRC_FILE
 #
 add_subdirectory(any)
 
-# add_subdirectory(net)
+add_subdirectory(net)
 
-# add_subdirectory(ffmpeg)
+add_subdirectory(ffmpeg)
 
-# add_subdirectory(opencv)
+add_subdirectory(opencv)
 
-# add_subdirectory(leet_code)
+add_subdirectory(leet_code)
