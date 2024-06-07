@@ -2348,7 +2348,10 @@ int test_juansheng_class()
         get_music_list_by_device_id,
         get_music_list_by_user_id,
         get_device_volume,
-        upload_file
+        upload_file,
+        delete_file,
+        play_music,
+        cancle_play_music
     };
 
     struct JuanshengDeviceInfo
@@ -2656,18 +2659,117 @@ int test_juansheng_class()
             ErrorType error_type{ErrorType::success};
             nlohmann::json parse_data;
 
-            std::ifstream input_file(path, std::ios::in | std::ios::binary);
+            std::ifstream input_file(path, std::ios::binary);
             std::ostringstream file_content;
             file_content << input_file.rdbuf();
             input_file.close();
             std::string file_data = file_content.str();
             httplib::MultipartFormDataItems items = {
                 {"token", m_token, "", ""},
-                {"file", file_data, "", ""}
+                {"file", file_data, path, "application/octet-stream"}
             };
 
             httplib::Client cli(m_host);
             auto res = cli.Post(m_api_table[JuanshengApi::upload_file], items);
+            LOG(INFO) << res->body << "\n";
+            try 
+            {
+                parse_data = nlohmann::json::parse(res->body);
+                if (parse_data["code"] != 0)
+                {
+                    error_type = ErrorType::fail; 
+                    return error_type;
+                }
+            }
+            catch (...)
+            {
+                error_type = ErrorType::fail; 
+                return error_type;
+            }
+
+            return error_type;
+        }
+
+        ErrorType DeleteFile(std::string file_id)
+        {
+            ErrorType error_type{ErrorType::success};
+            nlohmann::json parse_data;
+            httplib::Params params {
+                {"token", m_token},
+                {"ids", file_id}
+            };
+            httplib::Headers headers {
+                {"content-type", "x-www-form-urlencoded"}
+            };
+
+            httplib::Client cli(m_host);
+            auto res = cli.Get(m_api_table[JuanshengApi::delete_file], params, headers);
+            LOG(INFO) << res->body << "\n";
+            try 
+            {
+                parse_data = nlohmann::json::parse(res->body);
+                if (parse_data["code"] != 0)
+                {
+                    error_type = ErrorType::fail; 
+                    return error_type;
+                }
+            }
+            catch (...)
+            {
+                error_type = ErrorType::fail; 
+                return error_type;
+            }
+
+            return error_type;
+        }
+
+        ErrorType PlayMusic(std::string device_id, std::string music_id, int down_flag = 30, int play_count = 1)
+        {
+            ErrorType error_type{ErrorType::success};
+            nlohmann::json parse_data;
+
+            httplib::MultipartFormDataItems items {
+                {"token", m_token, "", ""},
+                {"deviceId", device_id, "", ""},
+                {"downFlag", std::to_string(down_flag), "", ""},
+                {"musicId", music_id, "", ""},
+                {"playCount", std::to_string(play_count), "", ""},
+                {"userId", m_user_id, "", ""},
+            };
+
+            httplib::Client cli(m_host);
+            auto res = cli.Post(m_api_table[JuanshengApi::play_music], items);
+            LOG(INFO) << res->body << "\n";
+            try 
+            {
+                parse_data = nlohmann::json::parse(res->body);
+                if (parse_data["code"] != 0)
+                {
+                    error_type = ErrorType::fail; 
+                    return error_type;
+                }
+            }
+            catch (...)
+            {
+                error_type = ErrorType::fail; 
+                return error_type;
+            }
+
+            return error_type;
+        }
+
+        ErrorType CanclePlayMusic(std::string device_id)
+        {
+            ErrorType error_type{ErrorType::success};
+            nlohmann::json parse_data;
+
+            httplib::MultipartFormDataItems items {
+                {"token", m_token, "", ""},
+                {"deviceId", device_id, "", ""}
+            };
+
+            httplib::Client cli(m_host);
+            auto res = cli.Post(m_api_table[JuanshengApi::cancle_play_music], items);
             LOG(INFO) << res->body << "\n";
             try 
             {
@@ -2700,7 +2802,10 @@ int test_juansheng_class()
             {JuanshengApi::get_music_list_by_device_id, "/jskj-api/api/getMusicListByDeviceId"},
             {JuanshengApi::get_music_list_by_user_id, "/jskj-api/api/getMusicListByUserId"},
             {JuanshengApi::get_device_volume, "/jskj-api/api/getDeviceVolume"},
-            {JuanshengApi::upload_file, "/jskj-api/api/uploadFile"}
+            {JuanshengApi::upload_file, "/jskj-api/api/uploadFile"},
+            {JuanshengApi::delete_file, "/jskj-api/api/delFile"},
+            {JuanshengApi::play_music, "/jskj-api/api/setDevicePlayingMusic"},
+            {JuanshengApi::cancle_play_music, "/jskj-api/api/cancleDevicePlayingStatus"}
         };
     };
 
@@ -2733,17 +2838,42 @@ int test_juansheng_class()
                   << "device address: " << info.device_address << "\n";
     });
 
-    std::vector<JuanshengSourceInfo> source_list;
-    error_type = juan_sheng.GetMusicListByDeviceId(source_list, "5lsqf8mpsc");
-    if (error_type != ErrorType::success)
-    {
-        LOG(ERROR) << "get music list by device id failed\n";
-        return -1;
-    }
-    std::for_each(source_list.begin(), source_list.end(), [](JuanshengSourceInfo info){
-        LOG(INFO) << "source id: " << info.src_name << "\n"
-                  << "source address: " << info.src_address << "\n";
-    });
+    // std::vector<JuanshengSourceInfo> source_list;
+    // error_type = juan_sheng.GetMusicListByDeviceId(source_list, "5lsqf8mpsc");
+    // if (error_type != ErrorType::success)
+    // {
+    //     LOG(ERROR) << "get music list by device id failed\n";
+    //     return -1;
+    // }
+    // std::for_each(source_list.begin(), source_list.end(), [](JuanshengSourceInfo info){
+    //     LOG(INFO) << "source id: " << info.src_name << "\n"
+    //               << "source address: " << info.src_address << "\n";
+    // });
+
+    // std::string is_upload;
+    // LOG(INFO) << "\nis upload file, choose yes or no: \n";
+    // std::cin >> is_upload;
+    // if (is_upload == "yes")
+    // {
+    //     std::string mp3_file{"/mnt/remote/190-mnt/zhangjunyi/Documents/rk_1126/rk_release/static/media/出现火情，请尽快处理.mp3"};
+    //     error_type = juan_sheng.UploadFile(mp3_file);
+    //     if (error_type != ErrorType::success)
+    //     {
+    //         LOG(ERROR) << "upload file failed\n";
+    //         return -1;
+    //     }
+    // }
+
+    // std::string file_id;
+    // LOG(INFO) << "\ninput file id: \n";
+    // std::cin >> file_id;
+
+    // error_type = juan_sheng.DeleteFile(file_id);
+    // if (error_type != ErrorType::success)
+    // {
+    //     LOG(ERROR) << "delete file failed\n";
+    //     return -1;
+    // }
 
     std::vector<JuanshengSourceInfo> user_source_list;
     error_type = juan_sheng.GetMusicListByUserId(user_source_list);
@@ -2757,11 +2887,22 @@ int test_juansheng_class()
                   << "source address: " << info.src_address << "\n";
     });
 
-    std::string mp3_file{"/mnt/remote/190-mnt/zhangjunyi/Documents/rk_1126/rk_release/static/media/出现火情，请尽快处理.mp3"};
-    error_type = juan_sheng.UploadFile(mp3_file);
+    std::string music_id;
+    LOG(INFO) << "\ninput music id: \n";
+    std::cin >> music_id;
+    error_type = juan_sheng.PlayMusic("5lsqf8mpsc", music_id, 30, 6);
     if (error_type != ErrorType::success)
     {
-        LOG(ERROR) << "upload file failed\n";
+        LOG(ERROR) << "play music failed\n";
+        return -1;
+    }
+
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+
+    error_type = juan_sheng.CanclePlayMusic("5lsqf8mpsc");
+    if (error_type != ErrorType::success)
+    {
+        LOG(ERROR) << "cancle music failed\n";
         return -1;
     }
 

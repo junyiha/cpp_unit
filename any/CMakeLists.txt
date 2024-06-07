@@ -4,8 +4,7 @@ message(STATUS "any sub project")
 #
 aux_source_directory(${CMAKE_SOURCE_DIR}/any/ SRC_FILES)
 
-# add_executable(any_unit ${SRC_FILES} ${MONGOOSE_SRC_FILES})
-add_executable(any_unit ${SRC_FILES} )
+add_executable(any_unit ${SRC_FILES} ${MONGOOSE_SRC_FILES})
 
 target_include_directories(any_unit PUBLIC ${Boost_INCLUDE_DIR} 
                                            ${CMAKE_SOURCE_DIR}/include/ 
