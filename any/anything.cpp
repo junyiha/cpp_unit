@@ -2890,11 +2890,15 @@ int test_juansheng_class()
     std::string music_id;
     LOG(INFO) << "\ninput music id: \n";
     std::cin >> music_id;
-    error_type = juan_sheng.PlayMusic("5lsqf8mpsc", music_id, 30, 6);
-    if (error_type != ErrorType::success)
+    for (int i = 0; i < 5; i++)
     {
-        LOG(ERROR) << "play music failed\n";
-        return -1;
+        error_type = juan_sheng.PlayMusic("5lsqf8mpsc", music_id, 30, 6);
+        if (error_type != ErrorType::success)
+        {
+            LOG(ERROR) << "play music failed\n";
+            return -1;
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(3));
     }
 
     std::this_thread::sleep_for(std::chrono::seconds(5));
@@ -2906,6 +2910,23 @@ int test_juansheng_class()
         return -1;
     }
 
+    return 0;
+}
+
+int test_string_split()
+{
+    std::string sn{"18238398546;123456;jkjkjl"};
+
+    auto first_pos = sn.find_first_of(';');
+    std::string account = sn.substr(0, first_pos);
+    auto second_pos = sn.find_first_of(';', first_pos + 1);
+    std::string password = sn.substr(first_pos + 1, second_pos - first_pos - 1);
+    std::string device_id = sn.substr(second_pos + 1);
+
+    LOG(INFO) << "account: " << account << "\n"
+              << "password: " << password << "\n"
+              << "device: " << device_id << "\n";
+    
     return 0;
 }
 
@@ -2971,7 +2992,8 @@ int main(int argc, char* argv[])
         {"test_juansheng_login", test_juansheng_login},
         {"test_juansheng_get_user_info", test_juansheng_get_user_info},
         {"test_juansheng_get_device_list", test_juansheng_get_device_list},
-        {"test_juansheng_class", test_juansheng_class}
+        {"test_juansheng_class", test_juansheng_class},
+        {"test_string_split", test_string_split}
     };
 
     auto it = func_table.find(FLAGS_module);
