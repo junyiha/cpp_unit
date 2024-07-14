@@ -2930,6 +2930,97 @@ int test_string_split()
     return 0;
 }
 
+int test_nanjing_yiyao()
+{
+    std::string host{"site.ycfszn.com"};
+    std::string path{"/phal/"};
+    std::string body_type {"application/json"};
+    std::string body{R"(
+{
+    "deviceid": "317f8878-4b84-3b6c-b29f-03a8714177ab",
+    "fingerprint": "317f8878-4b84-3b6c-b29f-03a8714177ab",
+    "warnat": "2024-7-13 23:1:15",
+    "warnbox": "{"label":10001,"score":83,"x1":1158,"x2":1684,"y1":21,"y2":970}",
+    "warntype": 3,
+    "warnpic":"sfa"
+}
+    )"};
+
+    httplib::SSLClient cli(host);
+    cli.set_connection_timeout(3,0);  // 3 seconds
+    cli.set_read_timeout(5, 0);  // 5 seconds
+    cli.set_write_timeout(5, 0);  // 5 seconds
+    cli.enable_server_certificate_verification(false);
+    httplib::Params params {
+        {"s", "App.AI.Setwarn"}
+    };
+    
+    auto res = cli.Post(path, body, body_type);
+    // auto res = cli.Post(path,"s=App.AI.Setwarn", body, "application/x-www-form-urlencoded");
+    if (res.error() != httplib::Error::Success)
+    {
+        LOG(ERROR) << "send https failed\n";
+        return -1;
+    }
+
+    std::string reply = res->body;
+    LOG(INFO) << "reply data: " << reply << "\n";
+
+    return 0;
+}
+
+int test_nanjing_yiyao_with_curl()
+{
+    std::string host{"site.ycfszn.com"};
+    std::string path{"/phal/"};
+    std::string body_type {"application/json"};
+    std::string body{R"(
+{
+    "deviceid": "317f8878-4b84-3b6c-b29f-03a8714177ab",
+    "fingerprint": "317f8878-4b84-3b6c-b29f-03a8714177ab",
+    "warnat": "2024-7-13 23:1:15",
+    "warnbox": "{"label":10001,"score":83,"x1":1158,"x2":1684,"y1":21,"y2":970}",
+    "warntype": 3,
+    "warnpic":"sfa"
+}
+    )"};
+
+    CURL *curl;
+    CURLcode res;
+    std::string readBuffer;
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    curl = curl_easy_init();
+
+    if (curl)
+    {
+        std::string url = "https://site.ycfszn.com/phal/?s=App.AI.Setwarn";
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+
+        // 设置回调函数，用于接收响应数据
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK)
+        {
+            LOG(ERROR) << "curl_easy_perform() failed: " << curl_easy_strerror(res) << "\n";
+        }
+        else 
+        {
+            LOG(INFO) << "request successful!\nreply data: " << readBuffer << "\n";
+        }
+
+        curl_easy_cleanup(curl);
+    }
+
+    curl_global_cleanup();
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -2993,7 +3084,9 @@ int main(int argc, char* argv[])
         {"test_juansheng_get_user_info", test_juansheng_get_user_info},
         {"test_juansheng_get_device_list", test_juansheng_get_device_list},
         {"test_juansheng_class", test_juansheng_class},
-        {"test_string_split", test_string_split}
+        {"test_string_split", test_string_split},
+        {"test_nanjing_yiyao", test_nanjing_yiyao},
+        {"test_nanjing_yiyao_with_curl", test_nanjing_yiyao_with_curl}
     };
 
     auto it = func_table.find(FLAGS_module);
