@@ -21,6 +21,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <algorithm>
+#include <vector>
 
 #include "mongoose/mongoose.h"
 

@@ -3021,6 +3021,70 @@ int test_nanjing_yiyao_with_curl()
     return 0;
 }
 
+int test_soil_mask()
+{
+    const std::string mask_json{"/home/user/junyiha.github.io/_posts/notes/Project/rk_工地盒子/rk_doc/SOIL.json"};
+    nlohmann::json parse_data;
+    std::ifstream file;
+
+    file.open(mask_json, std::ios::in);
+    if (!file)
+    {
+        LOG(ERROR) << "invalid json file: " << mask_json << "\n";
+        return -1;
+    }
+    
+    file >> parse_data;
+
+    std::string base64_str = parse_data["frame"]["detector"][0]["boxs"][0]["mask"]["data"];
+    auto data_ptr = base64_decode(base64_str.c_str(), base64_str.size());
+    std::ofstream output_file("/tmp/aaa.jpg", std::ios::binary);
+    output_file.write(reinterpret_cast<char *>(data_ptr), base64_str.size());
+    output_file.close();
+
+    LOG(INFO) << "label: " << parse_data["frame"]["index"] << "\n";
+    LOG(INFO) << "base64: " << base64_str << "\n";
+
+    return 0;
+}
+
+int test_opencv_mat()
+{
+    cv::Mat mask(5, 5, CV_8UC1, cv::Scalar(256));
+    for (int i = 0; i < mask.rows; i++)
+    {
+        for (int j = 0; j < mask.cols; j++)
+        {
+            LOG(INFO) << static_cast<int>(mask.at<uint8_t>(j, i)) << "\n";
+        }
+    }
+    LOG(INFO) << mask << "\n";
+    cv::imwrite("/tmp/cpp-test.jpg", mask);
+    return 0;
+}
+
+int test_opencv_read_mask()
+{
+    std::string path{"/tmp/mnc-test.jpg"};
+    cv::Mat mask = cv::imread(path);
+    long cover_counter{0};
+    long uncover_counter{0};
+
+    for (int i = 0; i < mask.rows; i++)
+    {
+        for (int j = 0; j < mask.cols; j++)
+        {
+            int pix_value = static_cast<int>(mask.at<uint8_t>(j, i));
+            LOG(INFO) << "pix value: " << pix_value << "\n";
+            pix_value == 1 ? cover_counter++ : uncover_counter++;
+        }
+    }
+    double rate = static_cast<double>(cover_counter) / static_cast<double>(cover_counter + uncover_counter);
+    LOG(INFO) << "rate: " << rate << "\n";
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -3086,7 +3150,10 @@ int main(int argc, char* argv[])
         {"test_juansheng_class", test_juansheng_class},
         {"test_string_split", test_string_split},
         {"test_nanjing_yiyao", test_nanjing_yiyao},
-        {"test_nanjing_yiyao_with_curl", test_nanjing_yiyao_with_curl}
+        {"test_nanjing_yiyao_with_curl", test_nanjing_yiyao_with_curl},
+        {"test_soil_mask", test_soil_mask},
+        {"test_opencv_mat", test_opencv_mat},
+        {"test_opencv_read_mask", test_opencv_read_mask}
     };
 
     auto it = func_table.find(FLAGS_module);

@@ -240,7 +240,7 @@ __RETURN_DATA:
 
 int ffmpeg_images_to_video(Protocol::Message& message)
 {
-    std::string image_dir{"/data/home/user/workspace/cpp_unit/data/images"};
+    std::string image_dir{"/tmp"};
     std::vector<std::string> image_path_container;
 
     try 
@@ -261,17 +261,17 @@ int ffmpeg_images_to_video(Protocol::Message& message)
         LOG(ERROR) << e.what() << "\n";
     }
 
-    std::sort(image_path_container.begin(), image_path_container.end(), [](std::string a, std::string b){
-        auto a_pos_1 = a.find_first_of('-');
-        auto a_pos_2 = a.find_first_of('.');
-        auto a_index = std::stoi(a.substr(a_pos_1 + 1, a_pos_2 - a_pos_1 - 1));
+    // std::sort(image_path_container.begin(), image_path_container.end(), [](std::string a, std::string b){
+    //     auto a_pos_1 = a.find_first_of('-');
+    //     auto a_pos_2 = a.find_first_of('.');
+    //     auto a_index = std::stoi(a.substr(a_pos_1 + 1, a_pos_2 - a_pos_1 - 1));
 
-        auto b_pos_1 = b.find_first_of('-');
-        auto b_pos_2 = b.find_first_of('.');
-        auto b_index = std::stoi(b.substr(b_pos_1 + 1, b_pos_2 - b_pos_1 - 1));
+    //     auto b_pos_1 = b.find_first_of('-');
+    //     auto b_pos_2 = b.find_first_of('.');
+    //     auto b_index = std::stoi(b.substr(b_pos_1 + 1, b_pos_2 - b_pos_1 - 1));
 
-        return a_index < b_index;
-    });
+    //     return a_index < b_index;
+    // });
 
     for (auto& it : image_path_container)
     {

@@ -151,6 +151,30 @@ int opencv_dnn_face_recognition_class(Protocol::Message& message)
     return 0;
 }
 
+int test_mask_image_to_video(Protocol::Message& message)
+{
+    std::string path{"/home/user/Downloads/Desktop/aaa.jpeg"};
+
+    cv::Mat img = cv::imread(path);
+
+    cv::VideoWriter video;
+    int fourcc = cv::VideoWriter::fourcc('H', '2', '6', '4');
+    double fps = 1.0;
+    cv::Size frameSize(img.rows, img.cols);
+    video.open("/tmp/output.avi",fourcc,fps, frameSize);
+
+    for (int i = 0; i < 1000; i++)
+    {
+        std::string img_path = "/tmp/img-";
+        img_path += std::to_string(i);
+        img_path += ".jpg";
+        cv::imwrite(img_path, img);
+    }
+    video.release();
+
+    return 0;
+}
+
 int main(int argc, char* argv[])
 {
     InitGlog(argv[0]);
@@ -170,7 +194,8 @@ int main(int argc, char* argv[])
     {
         {"opencv_basic_example", opencv_basic_example},
         {"opencv_dnn_face_recognition", opencv_dnn_face_recognition},
-        {"opencv_dnn_face_recognition_class", opencv_dnn_face_recognition_class}
+        {"opencv_dnn_face_recognition_class", opencv_dnn_face_recognition_class},
+        {"test_mask_image_to_video", test_mask_image_to_video}
     };
 
     auto it = func_table.find(module_cmd);
