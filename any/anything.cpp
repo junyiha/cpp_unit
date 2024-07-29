@@ -3085,6 +3085,20 @@ int test_opencv_read_mask()
     return 0;
 }
 
+int test_vector()
+{
+    std::vector<int> vec(10, 100);
+    std::vector<char> vec_char(10);
+    std::vector<double> vec_double(10); // nullptr
+
+    for (const auto& it : vec)
+    {
+        LOG(INFO) << it << "\n";
+    }
+
+    return 0;
+}
+
 DEFINE_string(module, "design", "module layer");
 
 int main(int argc, char* argv[])
@@ -3153,7 +3167,8 @@ int main(int argc, char* argv[])
         {"test_nanjing_yiyao_with_curl", test_nanjing_yiyao_with_curl},
         {"test_soil_mask", test_soil_mask},
         {"test_opencv_mat", test_opencv_mat},
-        {"test_opencv_read_mask", test_opencv_read_mask}
+        {"test_opencv_read_mask", test_opencv_read_mask},
+        {"test_vector", test_vector}
     };
 
     auto it = func_table.find(FLAGS_module);
